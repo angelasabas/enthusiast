@@ -1,0 +1,24 @@
+Hello $$fan_name$$,
+
+Welcome to the $$fanlisting_title$$ $$listing_type$$, a $$listing_type$$ for $$fanlisting_subject$$.
+
+You have received this email because you (or someone else) used this email address to sign up as a member of the $$fanlisting_title$$ $$listing_type$$. If this is in error, please reply to this email and tell us and we will remove you from the $$listing_type$$ as soon as possible.
+
+Currently, you have been placed on the members queue for approval. You are not yet part of the $$listing_type$$. If in two weeks, you have not yet been notified of your approval and you are not yet listed at the members list, please feel free to email us and check up on your application.
+
+The information you submitted to this fanlisting is shown below. Please keep this information, as you will need your password to change your information listed on the $$listing_type$$. If any of this is in error, feel free to update your information at $$fanlisting_url$$/$$fanlisting_update$$.
+
+Name: $$fan_name$$
+Email address: $$fan_email$$
+Country: $$fan_country$$
+URL: $$fan_url$$
+Password: $$fan_password$$
+
+Thank you for joining!
+
+Sincerely, 
+$$owner_name$$
+
+--
+$$fanlisting_title$$
+$$fanlisting_url$$

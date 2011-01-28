@@ -1,0 +1,20 @@
+Hello $$fan_name$$,
+
+You have received this email because you (or someone else) has recently changed your information on the $$fanlisting_subject$$ $$listing_type$$ ($$fanlisting_url$$). Your new information is below. If this is in error and you did not change your information, please secure your information immediately (especially by changing your password) and tell us immediately of this error.
+
+(Note: if you did not change your password, the password field will show up as blank. This is not an error; your password will still be the same when you joined or last updated it.)
+
+Name: $$fan_name$$ 
+Email address: $$fan_email$$ 
+Country: $$fan_country$$ 
+URL: $$fan_url$$
+Password: $$fan_password$$
+
+Thank you for keeping your information up to date!
+
+Sincerely,
+$$owner_name$$
+
+--
+$$fanlisting_title$$ 
+$$fanlisting_url$$

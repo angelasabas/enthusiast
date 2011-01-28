@@ -1,0 +1,2 @@
+<p><b>$$fan_name$$</b><br />
+$$fan_email_generic$$ - $$fan_url_generic$$</p>

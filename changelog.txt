@@ -1,0 +1,156 @@
+
+Enthusiast 3.x - Changelog
+------------------------------
+Copyright (c) Angela Sabas
+http://scripts.indisguise.org
+==============================
+
+Please see the readme.txt file for important information.
+
+From 3.1.5 to 3.1.6
+===================
+. Move of script license from homemade license to GPLv3.
+. Removal of Magpie RSS as feed parser.
+. Raise PHP version requirement to 5.2.
+. Changed get_categories to enth_get_categories to address function name clash
+  with WordPress and possibly other scripts.
+. Added form name prefixes to join, update, and lost password forms due to
+  POST variable clashing with WordPress and possibly other scripts.
+. Update of config file samples to use .sample.php in order to prevent
+  accidental overwriting.
+. Update of config file and join form to reference correct database resource
+  link in database calls to be safe.
+
+From 3.1.4 to 3.1.5
+===================
+. Fixed remote file inclusion vulnerability (http://www.milw0rm.com/exploits/7059)
+
+From 3.1.3 to 3.1.4
+===================
+. Added mass rejection of new members feature
+. Fixed bug where PEAR Mail class gets called twice when joining in certain
+  server and/or website settings
+. Fixed bug where showing/hiding of member emails do not get updated correctly
+  when members update their information
+. Fixed bug where there are still target attributes in links for the
+  fanlisting statistics
+. Fixed bug where non-numerical offsets are allowed in the pagination query
+
+From 3.1.2 to 3.1.3
+===================
+. Allowed setup of mailing mechanism in admin panel (via either native PHP
+  mail() command or PEAR mail)
+. Made site include scripts compliant with doctypes XHTML 1.0 Strict and
+  HTML 4.01 Strict
+. Added Enthusiast version printout include
+. Removed use of short tags to cater to more server setups
+. Fixed minor bug in statistics template that causes blank/nonexistent fields
+  to show up
+. Added check to ensure pagination parameter is a digit
+
+From 3.1.1 to 3.1.2
+===================
+. Fixed minor presentation errors in dashboard
+. Properly escaped various page URL inputs to counter known vulnerabilities
+
+From 3.1.0 to 3.1.1
+===================
+. Fixed bug that prevents showing of owned listings with different statuses
+  in one page due to a function declaration
+. Renamed get_category_children to get_enth_category_children function to
+  make Enthusiast compatible with WordPress
+. Fixed bug that does not replace $$stat_totalaffiliates$$ with the proper
+  value in listing statistics template
+. Fixed bug that prevents putting join, update, and lost password forms
+  in one page due to function declaration
+. Fixed bug that says email sending to a certain email address failed before
+  last-resort PHP mail() mailing takes place
+. Fixed errors on parsing image URLs if on Windows servers
+. If image uploading fails, folder will be CHMODed to 755 then 777 to upload
+  image; if CHMODed to 777, folder will be CHMODed back to 755 after uploading
+. Half-fixed bug that doesn't show empty child categories whose children
+  have listings in them (read: personally not happy with the fix)
+. Fix neglected listings notification bug that incorrectly states they
+  have not been updated when a new year starts
+. Fix bug that doesn't update the member's "show email" setting when they try
+  changing it using the update form
+. Fix bug that doesn't remove underscores from the additional fields' delete
+  record field in the update form
+. Fix bug that sets the latest joined fanlisting to only show the first
+  fanlisting added in a day
+
+
+From 3.0 to 3.1.0
+=================
+. Added listing growth rate (number of members per day) for listing statistics;
+  use $$stat_average$$ in listing statistics template
+. Added number of countries with members for listing statistics; use
+  $$stat_countries$$ in listing statistics template
+. Added list of collective categories the listing is associated with; use
+  $$stat_categories$$ in listing statistics template
+. Added list of newly-added/update affiliates in listing statistics template;
+  use $$stat_newaffiliates$$ or $$stat_newaffiliates_img$$
+. Added total number of affiliates in listing statistics template; use
+  $$stat_totalaffiliates$$
+. Added random affiliate showing in listing statistics template;
+  use $$stat_randomaffiliate$$ or $$stat_randomaffiliate_img$$
+. Added random member showing in listing statistics template;
+  see templates.txt for full list of possible variables
+. Modified look of the admin panel
+. Added neglected listings notification (two months without updates)
+. Added multi-level categories
+. Fixed joined listings descriptions bug
+. Added admin error logging
+. Removed 'pending listings' item list/dropdown option if there are no
+  joined listings pending approval
+. Added class names for HTML items in the show_* pages for more
+  customization flexibility using CSS (see styles.txt)
+. Updated TFL and TAFL categories
+. Allowed multiple categories for joined and owned listings
+. Added owned template variables "enth3-growth", "enth3-countries", and
+  "enth3-newmembers" for the average number of members joining per day, the
+  number of countries where members come from, and newly-added members
+  list, respectively
+. Changed owned template variable from "enth3-cat" to "enth3-categories"
+. Updated last updated date of listing when an affiliate is updated
+. Modified login to store md5 hash of password in cookie instead of
+  non-encrypted password
+. Removed emailing of added/approved member email if there is no template set
+. Added "check all" checkbox when approving members
+. Added multi-level-and-field sorting of the members list
+. Improved pagination
+. Added "send me my account information" checkbox in listing join forms
+. Modified field class names in listing forms
+. Improved error messages in listing forms
+. Used PEAR Mail for better email sending via fanlisting/admin panel
+. Renamed admin "home" page to "dashboard"
+. Added Enthusiast updates log/feed at dashboard
+. Improved form input checking
+. Fixed listing affiliates template bug
+. Improved direct emailing affiliates and general templates
+. Updated countries list
+. Added default values for no updates to last updated date and new members
+. Auto-detection and loading of paths during installation
+. Added a page to list all members of a listing according to the selected
+  sorting criteria
+
+Known bugs/etc.
+. No cancel buttons for "email all affiliates", "email all members", and
+   "email one member/affiliate"
+
+
+From 3.0.1 to 3.0.2
+===================
+. Fixed bug that adds an owned listing item to your list even if creation
+  of the database table for it failed
+. Fixed SQL bug on creation of a new fanlisting
+. Changed admin panel title to a more readable/serious format :P
+. Removed misplaced convertfanbase.php file from downloaded archive
+. Automatically lowercased email in Jem's join form fix
+
+
+From 3.0.0 to 3.0.1
+===================
+. Tightened login security
+. Included Jem's join form fix
+. Fixed fanlisting setup that adds an owned fanlisting without an opened date

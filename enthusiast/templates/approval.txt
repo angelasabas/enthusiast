@@ -1,0 +1,12 @@
+Hello $$fan_name$$,
+
+Thank you for joining $$fanlisting_title$$, a $$listing_type$$ for $$fanlisting_subject$$. You have been moved from the members queue to the fans list, and you should now be able to see your information on the site at $$fanlisting_url$$/$$fanlisting_list$$. Please do not lose the email that was earlier sent to you when you first joined, as it contains your information as well as your password for changing this information, which you can do so by going to $$fanlisting_url$$/$$fanlisting_update$$.
+
+If you ever forget your password, you can reset and retrieve your password by going to $$fanlisting_url$$/$$fanlisting_lostpass$$. 
+
+Sincerely,
+$$owner_name$$
+
+--
+$$fanlisting_title$$
+$$fanlisting_url$$

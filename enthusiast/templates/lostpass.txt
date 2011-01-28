@@ -1,0 +1,15 @@
+Hello $$fan_name$$, 
+
+You have received this email because you are a member of the $$fanlisting_subject$$ $$listing_type$$ and you (or someone else) has recently requested for a password reset on the $$listing_type$$. Your new password is shown below. If this is in error and you did not reset your password, please secure your information immediately and tell us immediately of this error.
+
+Email address: $$fan_email$$
+Password: $$fan_password$$
+
+You can change your password to something easier to remember by going to the update form at $$fanlisting_url$$/$$fanlisting_update$$
+
+Sincerely,
+$$owner_name$$
+
+--
+$$fanlisting_title$$
+$$fanlisting_url$$

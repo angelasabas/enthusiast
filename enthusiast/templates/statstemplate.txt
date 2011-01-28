@@ -1,0 +1,7 @@
+<blockquote>Script used: <a href="http://scripts.indisguise.org">Enthusiast</a><br />
+Last updated: $$stat_updated$$<br />
+Member count: $$stat_approved$$, from $$stat_countries$$ countries<br />
+Pending members: $$stat_pending$$<br />
+Newest members: $$stat_newmembers$$<br />
+Growth rate: $$stat_average$$ fans/day
+</blockquote>

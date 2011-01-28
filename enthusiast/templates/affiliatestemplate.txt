@@ -1,0 +1,1 @@
+<a href="$$aff_url$$"><img src="$$aff_image$$" width="$$aff_width$$" height="$$aff_height$$" border="0" alt=" $$aff_title$$" /></a> 

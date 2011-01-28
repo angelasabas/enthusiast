@@ -1,0 +1,259 @@
+a:link {
+	text-decoration: underline;
+	color: #58719B;
+	}
+a:visited {
+	text-decoration: underline;
+	color: #58719B;
+	}
+a:hover {
+	text-decoration: underline;
+	color: #58719B;
+	}
+a:active {
+	text-decoration: underline;
+	color: #58719B;
+	}
+
+body {
+	font-family: Trebuchet MS, Verdana, Tahoma, Arial, Helvetica, Sans-serif;
+	font-size: 8pt;
+	color: #000000;
+	background-color: #ffffff;
+	margin: 0px;
+	}
+
+.center {
+	text-align: center;
+	}
+
+.header {
+	visibility: visible;
+}
+.topmenu {
+	position: absolute;
+	top: 10px;
+	right: 5px;
+	}
+.topmenu a, .topmenu a:visited, .topmenu a:link {
+	text-decoration: none;
+	text-align: center;
+	font-weight: bold;
+	text-transform: uppercase;
+	font-size: 7pt;
+	letter-spacing: 3px;
+	padding: 3px;
+	border-width: 1px;
+	border-color: #58719B;
+	border-style: dotted;
+	background-color: #EEF3FC;
+	width: 80%;
+	}
+.topmenu a:hover, .topmenu a:active {
+	text-decoration: none;
+	background-color: #58719B;
+	color: #EEF3FC;
+	font-style: italic;
+	}
+
+.container {
+  width: 100%;
+  float: right;
+  margin-left: -200px;
+}
+.content {
+	margin-left: 200px;
+	padding-top: 0px;
+	padding-left: 0px;
+	padding-right: 20px;
+}
+h1 {
+	text-transform: uppercase;
+	font-weight: bold;
+	font-style: italic;
+	font-size: 9pt;
+	padding: 5px;
+	border-width: 0px;
+	border-bottom-width: 1px;
+	border-color: #58719B;
+	border-style: dotted;
+	}
+h2 {
+	text-transform: uppercase;
+	font-weight: bold;
+	font-size: 8pt;
+	padding-top: 10px;
+	}
+
+.sidebar {
+  width: 180px;
+  float: left;
+  padding: 10px;
+}
+.sidebar a, .sidebar a:link, .sidebar a:visited {
+	display: block;
+	text-decoration: none;
+	text-align: center;
+	font-weight: bold;
+	text-transform: uppercase;
+	font-size: 7pt;
+	letter-spacing: 3px;
+	padding: 0px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border-width: 1px;
+	border-color: #58719B;
+	border-style: dotted;
+	background-color: #EEF3FC;
+	width: 80%;
+	margin: auto;
+	margin-bottom: 5px;
+	}
+.sidebar a:hover, .sidebar a:active {
+	text-decoration: none;
+	background-color: #58719B;
+	color: #EEF3FC;
+	font-style: italic;
+	}
+
+.footer {
+	padding: 10px;
+	text-align: center;
+	clear: both;
+	font-size: 7pt;
+}
+
+table {
+	margin: auto;
+   width: 80%;
+	font-size: 8pt;
+	}
+th {
+	font-size: 9pt;
+	background-color: #58719B;
+	color: #EEF3FC;
+	padding: 5px;
+}
+tr th a:link,
+tr th a:visited {
+	color:#66CCFF;
+}
+tr.subheader td {
+	font-size: 8pt;
+	padding: 2px;
+	font-weight: bold;
+	text-align: center;
+	font-variant: small-caps;
+	background-color: #B6D0E0;
+}
+td {
+	vertical-align: top;
+}
+.rowshade {
+	background-color: #B9CBE6;
+}
+
+.noborder {
+	border-width: 0px;
+	}
+
+td {
+	padding: 5px;
+	}
+
+.darkBox {
+	background-color: #efefef;
+	}
+
+input, select, textarea {
+	background-color: #ffffff;
+	border-width: 1px;
+	border-color: #58719B;
+	border-style: dotted;
+	padding: 3px;
+	
+	font-family: Verdana, Tahoma, Arial, Helvetica, Sans-serif;
+	font-size: 8pt;
+	color: #000000;
+	}
+
+.important {
+	color: #ff0000;
+	}
+
+.upcoming {
+	color: #0000ff;
+	}
+
+a img {
+	border-width: 0px;
+	}
+
+li {
+	padding-bottom: 10px;
+	}
+
+table.stats {
+	border-width: 0px;
+	}
+
+table.stats tr td {
+	background-color: #fff;
+	text-align: left;
+	border-width: 0px;
+	border-bottom-width: 1px;
+	border-color: #58719B;
+	border-style: dotted;
+	}
+
+.right, table.stats tr td.right, table.loginbox tr td.right {
+	text-align: right;
+	}
+
+table.loginbox {
+	border-width: 0px;
+	}
+table.loginbox tr td {
+	background-color: #fff;
+	text-align: left;
+	}
+
+.submenu {
+   float: left;
+   width: 100px;
+   }
+.submenu a, .submenu a:link, .submenu a:visited {
+   display: block;
+	text-decoration: none;
+	text-align: center;
+	font-weight: bold;
+	text-transform: uppercase;
+	font-size: 7pt;
+	letter-spacing: 3px;
+	padding: 3px;
+   margin: 3px;
+	border-width: 1px;
+	border-color: #58719B;
+	border-style: dotted;
+	background-color: #EEF3FC;
+	width: 80%;
+	}
+.submenu a:hover, .submenu a:active {
+	text-decoration: none;
+	background-color: #58719B;
+	color: #EEF3FC;
+	font-style: italic;
+	}
+
+.error {
+	color: #f00;
+	margin: 3%;
+	margin-left: 12%;
+	margin-right: 12%;
+}
+.success {
+	color: #090;
+	margin: 3%;
+	margin-left: 12%;
+	margin-right: 12%;
+}

@@ -1,0 +1,442 @@
+
+Enthusiast 3.x - Installation/Configuration
+-------------------------------------------
+Copyright (c) Angela Sabas
+http://scripts.indisguise.org
+===========================================
+
+
+
+Enthusiast 3 is fully customizable collective and listing script rolled into
+one. It is highly different from current scripts, so please read this file
+in its entirety to know how to install, configure and use Enthusiast 3 to
+manage your collective and fanlistings.
+
+Usage of Enthusiast 3 is primarily centered around including script snippets
+into pages you create for your collective and fanlisting; thus, there is no
+joined.php, owned.php, or affiliates.php files (for the collective part) and
+no join.php, member.php, update.php (et al) files (for the fanlisting part).
+Making these show up on your collective and fanlisting is through the use of
+the snippets, which are explained below.
+
+
+
+IMPORTANT TIPS AND HINTS
+------------------------
+
+1. This install.txt file attempts to fully explain the whole installation
+   process, both for installing Enthusiast 3 (the collective script) and using
+   the installed Enthusiast 3 for your fanlistings. ENTHUSIAST 3 IS VERY
+   DIFFERENT FROM CURRENT SCRIPTS, so reading the texts in their entirety IS A
+   MUST. Trust me, it will help!!
+
+2. Once Enthusiast 3 is installed and you are inside the admin panel, before
+   you change anything, you must read through whatever instructions and hints
+   and tips I leave on the page. I try to provide instructions liberally,
+   and if you think a certain thing should be explained more, please feel free
+   to suggest it to me.
+
+3. Before converting listings over from Enthusiast 2 or phpFanbase or using
+   any other convert script, BACKUP YOUR DATABASES. You can do this using
+   third-party scripts such as phpMyAdmin and the like.
+
+4. Before converting listings over from Enthusiast 2 or phpFanbase or using
+   any other convert script, READ ALL INSTRUCTIONS.
+
+5. Five is my lucky number, so I'll reiterate it one more time: READ ALL OF
+   THE PROVIDED DOCUMENTATION BEFORE DOING ANYTHING AND AGAIN BEFORE ASKING
+   QUESTIONS.
+
+
+
+Main Installation
+-----------------
+
+1. Unzip the enth3 zip file and open enth3/config.sample.php in a text editor
+   and change the database variables to reflect the database and tables you
+   will use for Enthusiast 3. Please keep in mind that this will be the
+   settings for your collective, NOT a single fanlisting. Save this as
+   config.php.
+
+2. Copy all the files in the enth3/ folder of the zip file into a folder in
+   your website. Please note that this folder is for your ENTH3 INSTALLATION,
+   NOT YOUR FANLISTING; this is the folder for the admin panel of Enth3.
+
+3. Go to install.php in your browser, i.e., if you uploaded the enth3/ files
+   to http://yourdomain.com/admin, go to
+   http://yourdomain.com/admin/install.php
+
+4. Fill out all the fields in the form and click "Install Enthusiast 3!"
+   Please note that TRAILING SLASHES ARE IMPORTANT. They are VERY important
+   for Enth3-- the lack of trailing slashes can lead to a lot of errors
+   throughout the script. So please ADD TRAILING SLASHES TO ALL URLS AND PATHS.
+   Optional: when the script has finished, you can either go on and log into
+   Enth3 using the index.php page or install the categories in The Fanlistings
+   Network (and optionally also the categories for The Anime Fanlistings
+   Network) by going on to install_cats.php.
+   Additionally, remember to CHMOD your joined, owned, and affiliates
+   directories to 755.
+
+5. Log into Enth3 by going to index.php :)
+
+
+
+Collective Configuration
+------------------------
+
+1. Open the config.sample.php file that is *outside* the enth3/ directory in
+   the zip file, and supply the proper database values. Do not edit anything
+   else. Save this as config.php.
+
+   The database and sendmail values for this config file should MIRROR (read:
+   is exactly the same) as the config file found in your Enth3 installation.
+   The only difference, if ever, would be the database server IF the fanlisting
+   is hosted on another server.
+
+2. Upload this file to the directory that you want your collective site to
+   be in. This is not the admin panel; the admin panel and the collective site
+   directory must naturally be different from each other.
+
+3. To show the Joined Listings, insert the PHP lines below into the PHP file
+   where you want your joined listings to show up (make sure the extension
+   is .php or this will not work):
+
+      <?php include 'config.php';
+      $show_list = false;
+      include ENTH_PATH . 'show_joined.php'; ?>
+
+   Setting $show_list to true will show a bulletted list instead of a
+   dropdown menu for selecting the category.
+
+3. To show the Owned Listings, insert the PHP line below into the PHP file
+   where you want your owned listings to show up (make sure the extension
+   is .php or this will not work):
+
+      <?php include 'config.php';
+      $status = 'STATUS';
+      $hide_dropdown = false;
+      $show_list = false;
+      $show = 'SHOW';
+      include ENTH_PATH . 'show_owned.php'; ?>
+
+   where STATUS would be either of the following:
+
+      pending   = for pending listings
+      upcoming  = for upcoming listings
+      current   = for current listings
+
+   and SHOW would be the category ID of the "default" category to see if no
+   category is selected by the visitor from the dropdown menu, or 'all'.
+   The variables $hide_dropdown, $show_list, and $show are completely optional
+   variables (these lines can be removed). Setting $hide_dropdown to true
+   will not give the visitor any way to select a category; setting $show_list
+   to true will show a bulletted list instead of a dropdown menu for selecting
+   the category; if a category ID is set for $show, that category will be
+   pre-selected for default viewing.
+
+   For example:
+
+   If you just simply want to show the dropdown on your current listings page
+   with the default settings, you insert:
+
+      <?php include 'config.php';
+      $status = 'current';
+      include ENTH_PATH . 'show_owned.php'; ?>
+
+   But, for example you wish to show your upcoming listings without the
+   dropdown but want every upcoming listing to show up as soon as the page
+   loads (meaning, the user does not have to select anything), you would
+   insert:
+
+      <?php include 'config.php';
+      $status = 'upcoming';
+      $hide_dropdown = true;
+      $show = 'all';
+      include ENTH_PATH . 'show_owned.php'; ?>
+
+   Lastly, if you want to use a bulletted list but pre-select a category for
+   the user to view, you would insert:
+
+      <?php include 'config.php';
+      $status = 'current';
+      $show_list = true;
+      $show = '1';
+      include ENTH_PATH . 'show_owned.php'; ?>
+
+4. To show the collective affiliates, insert the PHP line below into the PHP
+   file where you want your collective affiliates to show up (make sure the
+   extension is .php or this will not work):
+
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_collective_affiliates.php'; ?>
+
+
+
+Collective Statistics
+---------------------
+
+1. Open up in a text editor the page where you want your collective stats
+   to show up, and insert this line before wherever you want the stats to
+   be placed:
+
+      <?php
+      include 'config.php';
+      include ENTH_PATH . 'show_collective_stats.php';
+      ?>
+
+2. The instructions below are all optional, depending on what information you
+   want to show on your collective. The PHP snippets below will all show plain
+   numbers unless otherwise specified.
+
+   Tip: if you want to have the numbers show up in comma notation, you can
+   use the following PHP function:
+
+      <?php echo number_format( $variable ) ?>
+
+   If you wish to show the total number of categories registered in your
+   collective (regardless whether or not you have joined/owned listings
+   under it), insert this line onto your page:
+
+      <?php echo $total_cats ?>
+
+   If you wish to show the total number of joined listings in your
+   collective (regardless of status), insert this line onto your page:
+
+      <?php echo $joined ?>
+
+   If you wish to show the total number of joined listings in your
+   collective (pending only), insert this line onto your page:
+
+      <?php echo $joined_pending ?>
+
+   If you wish to show the total number of joined listings in your
+   collective (approved only), insert this line onto your page:
+
+      <?php echo $joined_approved ?>
+
+   If you wish to show the total number of owned listings in your
+   collective (regardless of status), insert this line onto your page:
+
+      <?php echo $owned ?>
+
+   If you wish to show the total number of owned listings in your
+   collective (pending only), insert this line onto your page:
+
+      <?php echo $owned_pending ?>
+
+   If you wish to show the total number of owned listings in your
+   collective (upcoming only), insert this line onto your page:
+
+      <?php echo $owned_upcoming ?>
+
+   If you wish to show the total number of owned listings in your
+   collective (current only), insert this line onto your page:
+
+      <?php echo $owned_current ?>
+
+   If you wish to show the total number of collective affiliates, insert
+   this line onto your page:
+
+      <?php echo $affiliates_collective ?>
+
+   If you wish to show the total number of members for your listings,
+   both pending and approved:
+
+      <?php echo $collective_total_fans ?>
+
+   If you wish to show the total number of members for your listings,
+   approved only:
+
+      <?php echo $collective_total_fans_approved ?>
+
+   If you wish to show the total number of members for your listings,
+   pending only:
+
+      <?php echo $collective_total_fans_pending ?>
+
+   If you wish to show the growth rate of your owned listings (i.e., the
+   rate at which you open/get approved for fanlistings):
+
+      <?php echo $owned_growth_rate ?>
+
+   If you wish to show the cumulative growth rate of your individual listings
+   (i.e., the rate at which your listings get members):
+
+      <?php echo $collective_fans_growth_rate ?>
+
+   If you wish to show the rate at which you join listings:
+
+      <?php echo $joined_growth_rate ?>
+
+   If you wish to show the newest owned listing in your collective (current
+   only), insert these lines on your page, depending on what you want to
+   show:
+
+      <?php echo $owned_newest['title'] ?>       - listing title
+      <?php echo $owned_newest['subject'] ?>     - listing subject
+      <?php echo $owned_newest['url'] ?>         - listing URL
+      <?php echo $owned_newest['desc'] ?>        - listing description
+      <?php echo $owned_newest['listingtype'] ?> - listing type
+      <?php echo $owned_newest['opened'] ?>      - opened date
+      <?php echo $owned_newest['imagefile'] ?>   - listing image (directory path
+                                               not included)
+
+   If you wish to show the newest joined listing in your collective (approved
+   only), insert these lines on your page, depending on what you want to
+   show:
+
+      <?php echo $joined_newest['subject'] ?>     - listing subject
+      <?php echo $joined_newest['url'] ?>         - listing URL
+      <?php echo $joined_newest['desc'] ?>        - listing description
+      <?php echo $joined_newest['added'] ?>       - joined date
+      <?php echo $joined_newest['imagefile'] ?>   - listing image (directory path
+                                               not included)
+     
+   If you wish to show a random owned listing in your collective (current
+   only), insert these lines on your page, depending on what you want to
+   show:
+
+      <?php echo $owned_random['title'] ?>       - listing title
+      <?php echo $owned_random['subject'] ?>     - listing subject
+      <?php echo $owned_random['url'] ?>         - listing URL
+      <?php echo $owned_random['desc'] ?>        - listing description
+      <?php echo $owned_random['listingtype'] ?> - listing type
+      <?php echo $owned_random['opened'] ?>      - opened date
+      <?php echo $owned_random['imagefile'] ?>   - listing image (directory path
+                                               not included)
+
+   If you wish to show a random joined listing in your collective (approved
+   only), insert these lines on your page, depending on what you want to
+   show:
+
+      <?php echo $joined_random['subject'] ?>     - listing subject
+      <?php echo $joined_random['url'] ?>         - listing URL
+      <?php echo $joined_random['desc'] ?>        - listing description
+      <?php echo $joined_random['added'] ?>       - joined date
+      <?php echo $joined_random['imagefile'] ?>   - listing image (directory path
+                                               not included)
+
+
+
+Fanlisting Configuration
+------------------------
+
+1. Go to setup.php in your Enth3 installation (you can access this via the
+   Owned section) and install the fanlisting (follow instructions on the page).
+   Take note of the Listing ID that is assigned to it upon creation.
+
+2. Open the config.sample.php file that is *outside* the enth3/ directory in
+   the zip file, and supply the proper database values. Uncomment the line that
+   says "$listing = 1;" by deleting the two slashes before the line (hence,
+   from the line that says
+
+      //$listing = 1;
+
+   it should now look like
+
+      $listing = 1;
+
+   and change the value of $listing to the listing ID assigned to the listing
+   in Step 1. Save this as config.php.
+
+2. Upload this file (config.php, with the UNCOMMENTED $listing line) to the
+   directory that you want your fanlisting site to be in. This is the
+   fanlisting directory, NOT the collective directory, and NOT the admin
+   panel directory.
+
+   IMPORTANT NOTE: Folders for your listings do NOT have to be inside the admin
+   folder. They can be virtually anywhere.
+
+3. To show the members list, insert the PHP lines below into the PHP file
+   where you want the list to show up (make sure the extension
+   is .php or this will not work):
+
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_sort.php';
+      include ENTH_PATH . 'show_members.php'; ?>
+
+   Optional: when sorting members either by country or an additional field,
+   the value of the sort field (i.e., for sorting by country, the value
+   "United States") will be stripped from the members template. Therefore,
+   if you have your fans listed as "Jane from United States", viewing them all
+   will show the proper phrase, but sorting by country will yield "Jane from"
+   only. To prevent this, use these lines instead:
+
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_sort.php';
+      $show_sort_field = true;
+      include ENTH_PATH . 'show_members.php'; ?>
+
+   By default (as of Enthusiast 3.1), all members that fall under the visitor's
+   selected sorting criteria is shown -- which also means that if the visitor
+   did not select a sorting criteria, the list automatically shows ALL members
+   (paginated, of course). If you have multiple sorting fields selected, i.e.,
+   you're sorting first by "country", then by "name", when the visitor first
+   enters the members list, he will get all members. If he sorts by country,
+   i.e., all from the United States, he will get all members from the US,
+   regardless of name. When he then sorts again by name like "Jane", he 
+   will get all members from the US named Jane.
+
+   If you wish to turn off this functionality -- meaning, visitors must select
+   options from every sorting level before being presented with a members 
+   list -- you can add the following line in your snippet, just after 
+   including the config.php file:
+
+      $hide_members_until_final = true;
+
+   Of course, you may also choose not to sort your members list at all, and
+   in that case you may add this line (make sure $hide_members_until_final
+   is not in the snippet!):
+
+      $no_sort = true;
+
+   It is also possible to separate the sorting list and the members list
+   (i.e., you want to show the countries list as a bulletted list, but doing
+   so will make the members page too long, so you want the countries list on
+   one page and the members list on another). To do this, create a file, for
+   example countries.php, and insert the PHP lines below into the PHP file
+   where you want the countries list to show up (make sure the extension is
+   .php or this will not work):
+
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_sort.php'; ?>
+
+   And then create another file, for example members.php, and insert the PHP
+   lines below into the PHP file where you want the members list to show up
+   (make sure the extension is .php or this will not work):
+
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_members.php'; ?>
+
+   After that, make sure that the value of the list page in the Enth3 admin
+   panel for that listing is set to members.php, NOT countries.php.
+
+4. To show the join form, insert the PHP lines below into the PHP file
+   where you want the form to show up (make sure the extension
+   is .php or this will not work):
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_join.php'; ?>
+
+5. To show the update form, insert the PHP lines below into the PHP file
+   where you want the form to show up (make sure the extension
+   is .php or this will not work):
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_update.php'; ?>
+
+6. To show the lost password form, insert the PHP lines below into the PHP file
+   where you want the form to show up (make sure the extension
+   is .php or this will not work):
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_lostpass.php'; ?>
+
+7. To show the listing statistics, insert the PHP lines below into the PHP file
+   where you want the stats to show up (make sure the extension
+   is .php or this will not work):
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_stats.php'; ?>
+
+8. To show the listing affiliates, insert the PHP lines below into the PHP file
+   where you want the stats to show up (make sure the extension
+   is .php or this will not work):
+      <?php include 'config.php';
+      include ENTH_PATH . 'show_affiliates.php'; ?>
