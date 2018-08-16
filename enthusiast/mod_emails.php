@@ -27,23 +27,27 @@
 function get_email_templates() {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT `templateid` FROM `$db_emailtemplate`";
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $templates = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $templates[] = $row['templateid'];
    return $templates;
 }
@@ -53,21 +57,26 @@ function get_email_templates() {
 function get_template_info( $id ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
-   $query = "SELECT * FROM `$db_emailtemplate` WHERE `templateid` = '$id'";
+   $query = "SELECT * FROM `$db_emailtemplate` WHERE `templateid` = :id";
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   return mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   return $result->fetch();
 }
 
 
@@ -75,18 +84,24 @@ function get_template_info( $id ) {
 function add_template( $name, $subject, $content ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "INSERT INTO `$db_emailtemplate` VALUES( " .
-      "null, '$name', '$subject', '$content', 1 )";
+      "null, :name, :subject, :content, 1 )";
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':name', $name, PDO::PARAM_STR);
+   $result->bindParam(':subject', $subject, PDO::PARAM_STR);
+   $result->bindParam(':content', $content, PDO::PARAM_STR);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
@@ -98,19 +113,26 @@ function add_template( $name, $subject, $content ) {
 function edit_template( $id, $name, $subject, $content ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
-   $query = "UPDATE `$db_emailtemplate` SET `templatename` = '$name', " .
-      "`subject` = '$subject', `content` = '$content' WHERE " .
-      "`templateid` = '$id'";
+   $query = "UPDATE `$db_emailtemplate` SET `templatename` = :name, " .
+      "`subject` = :subject, `content` = :content WHERE " .
+      "`templateid` = :id";
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':name', $name, PDO::PARAM_STR);
+   $result->bindParam(':subject', $subject, PDO::PARAM_STR);
+   $result->bindParam(':content', $content, PDO::PARAM_STR);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
@@ -122,17 +144,21 @@ function edit_template( $id, $name, $subject, $content ) {
 function delete_template( $id ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
-   $query = "DELETE FROM `$db_emailtemplate` WHERE `templateid` = '$id'";
+   $query = "DELETE FROM `$db_emailtemplate` WHERE `templateid` = :id";
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
@@ -144,35 +170,43 @@ function delete_template( $id ) {
 function parse_template( $templateid, $email, $listing, $affid = 0 ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT * FROM `$db_emailtemplate` WHERE " .
-      "`templateid` = '$templateid'";
-   $result = mysql_query( $query );
+      "`templateid` = :templateid";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':templateid', $templateid, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $subject = $row['subject'];
    $body = $row['content'];
 
    if( $listing != '' && ctype_digit( $listing ) ) {
       // it's a fanlisting, get listing info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
 
       $subject = str_replace( '$$fanlisting_title$$',
          html_entity_decode( $info['title'], ENT_QUOTES ), $subject );
@@ -227,22 +261,27 @@ function parse_template( $templateid, $email, $listing, $affid = 0 ) {
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       if( !ctype_digit( $affid ) || $affid == 0 ) {
          // its a member being emailed, get member info
-         $query = "SELECT * FROM `$table` WHERE `email` = '$email'";
-         $result = mysql_query( $query );
+         $query = "SELECT * FROM `$table` WHERE `email` = :email";
+         $result = $db_link->prepare($query);
+         $result->bindParam(':email', $email, PDO::PARAM_STR);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             die( STANDARD_ERROR );
          }
-         $row = mysql_fetch_array( $result );
+         $result->setFetchMode(PDO::FETCH_ASSOC);
+         $row = $result->fetch();
 
          $subject = str_replace( '$$fan_email$$', $row['email'], $subject );
          $subject = str_replace( '$$fan_name$$', $row['name'], $subject );
@@ -265,15 +304,18 @@ function parse_template( $templateid, $email, $listing, $affid = 0 ) {
       } else {
          // its an affiliate being emailed, get affiliate info
          $afftable = $table . '_affiliates';
-         $query = "SELECT * FROM `$afftable` WHERE affiliateid = '$affid'";
-         $result = mysql_query( $query );
+         $query = "SELECT * FROM `$afftable` WHERE affiliateid = :affid";
+         $result = $db_link->prepare($query);
+         $result->bindParam(':affid', $affid, PDO::PARAM_INT);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             die( STANDARD_ERROR );
          }
-         $row = mysql_fetch_array( $result );
+         $result->setFetchMode(PDO::FETCH_ASSOC);
+         $row = $result->fetch();
 
          $subject = str_replace( '$$aff_email$$', $row['email'], $subject );
          $subject = str_replace( '$$aff_id$$', $row['affiliateid'], $subject );
@@ -290,28 +332,33 @@ function parse_template( $templateid, $email, $listing, $affid = 0 ) {
    } else {
       // it's a collective affiliate we're emailing, probably!
       // get affiliate info
-      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = '$affid'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = :affid";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':affid', $affid, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
 
       // get collective values
       $query = "SELECT `setting`, `value` FROM `$db_settings` WHERE " .
          "`setting` = 'collective_title' OR `setting` = 'collective_url' OR " .
          "`setting` = 'owner_email' OR `setting` = 'owner_name'";
-      $result = mysql_query( $query );
+      $result = $db_link->prepare($query);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      while( $row = mysql_fetch_array( $result ) ) {
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      while( $row = $result->fetch() ) {
          switch( $row['setting'] ) {
             case 'collective_title' :
                $title = $row['value']; break;
@@ -355,22 +402,27 @@ function parse_template( $templateid, $email, $listing, $affid = 0 ) {
 function parse_email_text( $subject, $body, $email, $listing, $affid = 0 ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    if( $listing != '' && ctype_digit( $listing ) ) {
       // it's a fanlisting, get listing info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
 
       $subject = str_replace( '$$fanlisting_title$$',
          html_entity_decode( $info['title'], ENT_QUOTES ),
@@ -426,22 +478,27 @@ function parse_email_text( $subject, $body, $email, $listing, $affid = 0 ) {
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       if( !ctype_digit( $affid ) || $affid == 0 ) {
          // its a member being emailed, get member info
-         $query = "SELECT * FROM `$table` WHERE `email` = '$email'";
-         $result = mysql_query( $query );
+         $query = "SELECT * FROM `$table` WHERE `email` = :email";
+         $result = $db_link->prepare($query);
+         $result->bindParam(':email', $email, PDO::PARAM_STR);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             die( STANDARD_ERROR );
          }
-         $row = mysql_fetch_array( $result );
+         $result->setFetchMode(PDO::FETCH_ASSOC);
+         $row = $result->fetch();
 
          $subject = str_replace( '$$fan_email$$', $row['email'], $subject );
          $subject = str_replace( '$$fan_name$$',
@@ -469,15 +526,18 @@ function parse_email_text( $subject, $body, $email, $listing, $affid = 0 ) {
       } else {
          // its an affiliate being emailed, get affiliate info
          $afftable = $table . '_affiliates';
-         $query = "SELECT * FROM `$afftable` WHERE affiliateid = '$affid'";
-         $result = mysql_query( $query );
+         $query = "SELECT * FROM `$afftable` WHERE affiliateid = :affid";
+         $result = $db_link->prepare($query);
+         $result->bindParam(':affid', $affid, PDO::PARAM_INT);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             die( STANDARD_ERROR );
          }
-         $row = mysql_fetch_array( $result );
+         $result->setFetchMode(PDO::FETCH_ASSOC);
+         $row = $result->fetch();
 
          $subject = str_replace( '$$aff_email$$', $row['email'], $subject );
          $subject = str_replace( '$$aff_id$$', $row['affiliateid'], $subject );
@@ -494,28 +554,33 @@ function parse_email_text( $subject, $body, $email, $listing, $affid = 0 ) {
    } else {
       // it's a collective affiliate we're emailing, probably!
       // get affiliate info
-      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = '$affid'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = :affid";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':affid', $affid, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
 
       // get collective values
       $query = "SELECT `setting`, `value` FROM `$db_settings` WHERE " .
          "`setting` = 'collective_title' OR `setting` = 'collective_url' OR " .
          "`setting` = 'owner_email' OR `setting` = 'owner_name'";
-      $result = mysql_query( $query );
+      $result = $db_link->prepare($query);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      while( $row = mysql_fetch_array( $result ) ) {
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      while( $row = $result->fetch() ) {
          switch( $row['setting'] ) {
             case 'collective_title' :
                $title = $row['value']; break;
@@ -564,16 +629,20 @@ function send_email( $to, $from, $subject, $body ) {
       include_once( 'Mail.php' );
    }
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    // get email settings
    $settingq = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
       "'mail_settings'";
-   $result = mysql_query( $settingq );
-   $row = mysql_fetch_array( $result );
+   $result = $db_link->prepare($settingq);
+   $result->execute();
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $use_mailer = ( count( $row ) ) ? $row['value'] : 'php';
 
    // php: use native php
@@ -585,8 +654,10 @@ function send_email( $to, $from, $subject, $body ) {
       // get sendmail settings
       $settingq = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
          "'sendmail_path'";
-      $result = mysql_query( $settingq );
-      $row = mysql_fetch_array( $result );
+      $result = $db_link->prepare($settingq);
+      $result->execute();
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $sendmail_path = ( count( $row ) ) ? $row['value'] : '/usr/bin/sendmail';
       
       // setup pear mail
@@ -613,13 +684,15 @@ function send_email( $to, $from, $subject, $body ) {
       // get smtp settings
       $settingq = "SELECT `setting`, `value` FROM `$db_settings` WHERE " .
          "`setting` LIKE 'smtp_%'";
-      $result = mysql_query( $settingq );
+      $result = $db_link->prepare($settingq);
+      $result->execute();
+      $result->setFetchMode(PDO::FETCH_ASSOC);
       $smtp_host = '';
       $smtp_port = '';
       $smtp_auth = '';
       $smtp_username = '';
       $smtp_password = '';
-      while( $row = mysql_fetch_array( $result ) ) {
+      while( $row = $result->fetch() ) {
          $$row['setting'] = $row['value'];
       }
       

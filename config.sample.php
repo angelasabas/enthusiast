@@ -47,23 +47,27 @@ if( !defined( 'STANDARD_ERROR' ) )
 // get installation path
 $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
    '"installation_path"';
-$db_link = mysql_connect( $db_server, $db_user, $db_password )
-   or die( DATABASE_CONNECT_ERROR . mysql_error() );
-mysql_select_db( $db_database, $db_link )
-   or die( DATABASE_CONNECT_ERROR . mysql_error() );
-$result = mysql_query( $query, $db_link );
+ try {
+    $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+    $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+ } catch (PDOException $e) {
+    die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+ }
+$result = $db_link->prepare($query);
+$result->execute();
 if( !$result ) {
    if( function_exists( 'log_error' ) ) {
       log_error( 'config.php',
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    } else {
-      die( 'Error executing query: <i>' . mysql_error() .
+      die( 'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
    }
 }
-$row = mysql_fetch_array( $result );
+$result->setFetchMode(PDO::FETCH_ASSOC);
+$row = $result->fetch();
 $path = $row['value'];
 if( !defined( 'ENTH_PATH' ) ) {
    define( 'ENTH_PATH', $row['value'] );

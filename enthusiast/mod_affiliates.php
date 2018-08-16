@@ -27,20 +27,20 @@
 function get_affiliates( $listing = 'none', $start = 'none' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = 'per_page'";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $limit = $row['value'];
 
    $limit_query = '';
@@ -51,16 +51,19 @@ function get_affiliates( $listing = 'none', $start = 'none' ) {
    $query = "SELECT * FROM `$db_affiliates` ORDER BY `title`";
    if( $listing != '' && $listing != 'collective' && $listing != 'none' ) {
       // get info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
 
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
       if( $info['affiliates'] != 1 )
          return array(); // return blank array if affiliates is not enabled
 
@@ -70,25 +73,25 @@ function get_affiliates( $listing = 'none', $start = 'none' ) {
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
       $afftable = $table . '_affiliates';
       $query = "SELECT * FROM `$afftable` ORDER BY `title`";
       }
    $query .= $limit_query;
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
    $aff = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $aff[] = $row;
    return $aff;
 }
@@ -97,50 +100,53 @@ function get_affiliates( $listing = 'none', $start = 'none' ) {
 function add_affiliate( $url, $title, $email, $listing = 'collective' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
    $query = '';
    if( $listing == 'collective' || $listing == '' )
-      $query = "INSERT INTO `$db_affiliates` VALUES( null, '$url', '$title'," .
-         " null, '$email', CURDATE() )";
+      $query = "INSERT INTO `$db_affiliates` VALUES( null, :url, :title," .
+         " null, :email, CURDATE() )";
    else {
       // get info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
       $table = $info['dbtable'];
       $dbserver = $info['dbserver'];
       $dbdatabase = $info['dbdatabase'];
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
       $afftable = $table . '_affiliates';
       $query = "INSERT INTO `$afftable` VALUES( " .
-         "null, '$url', '$title', null, '$email', CURDATE() )";
+         "null, :url, :title, null, :email, CURDATE() )";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':url', $url, PDO::PARAM_STR);
+   $result->bindParam(':title', $title, PDO::PARAM_STR);
+   $result->bindParam(':email', $email, PDO::PARAM_STR);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   return mysql_insert_id();
+   return $db_link->lastInsertId();
 }
 
 
@@ -149,67 +155,72 @@ function edit_affiliate( $id, $listing = '', $image = '', $url = '',
    $title = '', $email = '' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
    $query = '';
    if( $listing == '' || $listing == 'collective' ) {
       $query = "UPDATE `$db_affiliates` SET ";
       if( $url )
-         $query .= "`url` = '$url', ";
+         $query .= "`url` = :url, ";
       if( $title )
-         $query .= "`title` = '$title', ";
+         $query .= "`title` = :title, ";
       if( $email )
-         $query .= "`email` = '$email', ";
+         $query .= "`email` = :email, ";
       if( $image != '' && $image != 'null' )
-         $query .= "`imagefile` = '$image', ";
+         $query .= "`imagefile` = :image, ";
       else if( $image == 'null' )
          $query .= '`imagefile` = null, ';
-      $query .= "`added` = CURDATE() WHERE `affiliateid` = $id";
+      $query .= "`added` = CURDATE() WHERE `affiliateid` = :id";
       }
    else {
       // get info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
       $table = $info['dbtable'];
       $dbserver = $info['dbserver'];
       $dbdatabase = $info['dbdatabase'];
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
       $afftable = $table . '_affiliates';
       $query = "UPDATE `$afftable` SET ";
       if( $url )
-         $query .= "`url` = '$url', ";
+         $query .= "`url` = :url, ";
       if( $title )
-         $query .= "`title` = '$title', ";
+         $query .= "`title` = :title, ";
       if( $email )
-         $query .= "`email` = '$email', ";
+         $query .= "`email` = :email, ";
       if( $image != '' && $image != 'null' )
-         $query .= "`imagefile` = '$image', ";
+         $query .= "`imagefile` = :image, ";
       else if( $image == 'null' )
          $query .= '`imagefile` = null, ';
-      $query .= "`added` = CURDATE() WHERE `affiliateid` = '$id'";
+      $query .= "`added` = CURDATE() WHERE `affiliateid` = :id";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':url', $url, PDO::PARAM_STR);
+   $result->bindParam(':title', $title, PDO::PARAM_STR);
+   $result->bindParam(':email', $email, PDO::PARAM_STR);
+   $result->bindParam(':image', $image, PDO::PARAM_STR);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
@@ -220,42 +231,43 @@ function edit_affiliate( $id, $listing = '', $image = '', $url = '',
 /*___________________________________________________________________________*/
 function delete_affiliate( $id, $listing = '' ) {
    require 'config.php';
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-   $query = "DELETE FROM `$db_affiliates` WHERE `affiliateid` = '$id'";
+   $query = "DELETE FROM `$db_affiliates` WHERE `affiliateid` = :id";
    if( $listing != '' && $listing != 'collective' ){
       // get info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
       $table = $info['dbtable'];
       $dbserver = $info['dbserver'];
       $dbdatabase = $info['dbdatabase'];
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
       $afftable = $table . '_affiliates';
-      $query = "DELETE FROM `$afftable` WHERE `affiliateid` = '$id'";
+      $query = "DELETE FROM `$afftable` WHERE `affiliateid` = :id";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
@@ -267,48 +279,50 @@ function delete_affiliate( $id, $listing = '' ) {
 function get_affiliate_info( $id, $listing = 'collective' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
    $query = 'SELECT `url`, `title`, `imagefile`, `email` ' .
-      "FROM `$db_affiliates` WHERE `affiliateid` = '$id'";
+      "FROM `$db_affiliates` WHERE `affiliateid` = :id";
    if( $listing && $listing != 'collective' ) {
       // get info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = fetch();
       $table = $info['dbtable'];
       $dbserver = $info['dbserver'];
       $dbdatabase = $info['dbdatabase'];
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
       $afftable = $table . '_affiliates';
       $query = "SELECT `url`, `title`, `imagefile`, `email` FROM `$afftable`" .
-         " WHERE `affiliateid` = '$id'";
+         " WHERE `affiliateid` = :id";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   return mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   return $result->fetch();
 }
 
 
@@ -316,34 +330,36 @@ function get_affiliate_info( $id, $listing = 'collective' ) {
 function parse_affiliate_add_email( $id, $listing = '' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
    // get owner name
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
       "'owner_name'";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $name = $row['value'];
 
    // get template
    $query = "SELECT * FROM `$db_emailtemplate` WHERE `templateid` = 1";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $template = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $template = $result->fetch();
 
    $info = array();
    $title = '';
@@ -351,28 +367,33 @@ function parse_affiliate_add_email( $id, $listing = '' ) {
    $email = '';
    if( $listing == '' || $listing == 'collective' ) {
       // get affiliate info
-      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = '$id'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = :id";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':id', $id, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
 
       // get collective values
       $query = "SELECT `setting`, `value` FROM `$db_settings` WHERE " .
          "`setting` = 'collective_title' OR `setting` = 'collective_url' OR " .
          "`setting` = 'owner_email'";
-      $result = mysql_query( $query );
+      $result = $db_link->prepare($query);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      while( $row = mysql_fetch_array( $result ) ) {
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      while( $row = $result->fetch() ) {
          switch( $row['setting'] ) {
             case 'collective_title' :
                $title = $row['value']; break;
@@ -385,15 +406,18 @@ function parse_affiliate_add_email( $id, $listing = '' ) {
       }
    } else {
       // get info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $listinginfo = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $listinginfo = $result->fetch();
 
       $table = $listinginfo['dbtable'];
       $afftable = $table . '_affiliates';
@@ -405,20 +429,21 @@ function parse_affiliate_add_email( $id, $listing = '' ) {
       $url = $listinginfo['url'];
       $email = $listinginfo['email'];
 
-      $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $dbdatabase )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-      $query = "SELECT * FROM `$afftable` WHERE `affiliateid` = '$id'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$afftable` WHERE `affiliateid` = :id";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':id', $id, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
    }
 
    // parse body email template
@@ -459,22 +484,22 @@ function parse_affiliate_add_email( $id, $listing = '' ) {
 function parse_affiliates_template( $id, $listing = '' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
    // get template
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
       "'affiliates_template'";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $setting = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $setting = fetch();
    $template = $setting['value'];
 
    $listing = trim( $listing );
@@ -482,15 +507,18 @@ function parse_affiliates_template( $id, $listing = '' ) {
    // get affiliate info
    if( $listing != '' && ctype_digit( $listing ) ) {
       // get info
-      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$listing'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :listing";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $listinginfo = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $listinginfo = $result->fetch();
 
       $table = $listinginfo['dbtable'];
       $afftable = $table . '_affiliates';
@@ -502,42 +530,41 @@ function parse_affiliates_template( $id, $listing = '' ) {
 
       if( $dbserver != $db_server || $dbdatabase != $db_database ||
          $dbuser != $db_user || $dbpassword != $db_password ) {
-         $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-            or die( DATABASE_CONNECT_ERROR . mysql_error() );
-         mysql_select_db( $dbdatabase )
-            or die( DATABASE_CONNECT_ERROR . mysql_error() );
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
       }
 
-      $query = "SELECT * FROM `$afftable` WHERE `affiliateid` = '$id'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$afftable` WHERE `affiliateid` = :id";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':id', $id, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
 
       // reconnect to original database now
       if( $dbserver != $db_server || $dbdatabase != $db_database ||
          $dbuser != $db_user || $dbpassword != $db_password ) {
-         mysql_close( $db_link_list );
-         $db_link = mysql_connect( $db_server, $db_user, $db_password )
-            or die( DATABASE_CONNECT_ERROR . mysql_error() );
-         mysql_select_db( $db_database )
-            or die( DATABASE_CONNECT_ERROR . mysql_error() );
+         $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
       }
 
    } else {
-      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = '$id'";
-      $result = mysql_query( $query );
+      $query = "SELECT * FROM `$db_affiliates` WHERE `affiliateid` = :id";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':id', $id, PDO::PARAM_INT);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $info = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $info = $result->fetch();
    }
 
    // get affiliates dir
@@ -546,18 +573,21 @@ function parse_affiliates_template( $id, $listing = '' ) {
       '"root_path_web"';
    if( $listing != '' && $listing != 'collective' )
       $query = "SELECT `affiliatesdir` FROM `$db_owned` WHERE " .
-         "`listingid` = '$listing'";
-   $result = mysql_query( $query );
+         "`listingid` = :listing";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':listing', $listing, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
    $dir = '';
    $root_web = '';
    $root_abs = '';
-   while( $row = mysql_fetch_array( $result ) ) {
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() ) {
       if( $listing )
          $dir = $row['affiliatesdir'];
       else {
@@ -573,14 +603,16 @@ function parse_affiliates_template( $id, $listing = '' ) {
    if( $root_web == '' && $root_abs == '' ) {
       $query = "SELECT `setting`, `value` FROM `$db_settings` WHERE " .
          '`setting` = "root_path_absolute" OR `setting` = "root_path_web"';
-      $result = mysql_query( $query );
+      $result = $db_link->prepare($query);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      while( $row = mysql_fetch_array( $result ) )
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      while( $row = $result->fetch() )
          if( $row['setting'] == 'root_path_absolute' )
             $root_abs = $row['value'];
          else

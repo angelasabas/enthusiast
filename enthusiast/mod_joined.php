@@ -27,10 +27,12 @@
 function get_joined( $status = 'all', $start = 'none', $bydate = 'no' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT `joinedid` FROM `$db_joined`";
 
@@ -49,22 +51,26 @@ function get_joined( $status = 'all', $start = 'none', $bydate = 'no' ) {
    if( $start != 'none' && ctype_digit( $start ) ) {
       $settingq = "SELECT `value` FROM `$db_settings` " .
          "WHERE `setting` = 'per_page'";
-      $result = mysql_query( $settingq );
-      $row = mysql_fetch_array( $result );
+      $result = $db_link->prepare($settingq);
+      $result->execute();
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $limit = $row['value'];
       $query .= " LIMIT $start, $limit";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['joinedid'];
    return $ids;
 }
@@ -73,26 +79,30 @@ function get_joined( $status = 'all', $start = 'none', $bydate = 'no' ) {
 /*___________________________________________________________________________*/
 function get_joined_cats() {
    require 'config.php';
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error()  );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT DISTINCT( `catid` ) as `id` FROM `$db_joined` ";
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   if( mysql_num_rows( $result ) == 0 )
+   if( $result->rowCount() == 0 )
       return array(); // return empty array, no cats
 
    $query = "SELECT `catid` FROM `$db_category` WHERE ( ";
    $allcats = array();
-   while( $row = mysql_fetch_array( $result ) ) {
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() ) {
       $cats = explode( '|', $row['id'] );
       foreach( $cats as $cat )
          if( $cat != '' && !in_array( $cat, $allcats ) ) {
@@ -103,16 +113,18 @@ function get_joined_cats() {
    $query = rtrim( $query, 'OR ' ) . ' ) ';
    $query .= ' ORDER BY `catname` ASC';
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['catid'];
    return $ids;
 }
@@ -121,20 +133,25 @@ function get_joined_cats() {
 /*___________________________________________________________________________*/
 function get_joined_info( $id ) {
    require 'config.php';
-   $query = "SELECT * FROM `$db_joined` WHERE `joinedid` = '$id'";
+   $query = "SELECT * FROM `$db_joined` WHERE `joinedid` = :id";
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   $result = mysql_query( $query );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   return mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   return $result->fetch();
 }
 
 
@@ -144,20 +161,25 @@ function get_joined_by_category( $catid ) {
    $query = "SELECT `joinedid` FROM `$db_joined` WHERE `catid` LIKE " .
       "'%|$catid|%' ORDER BY `subject`";
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   $result = mysql_query( $query );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
+   $result = $db_link->prepare($query);
+   $result->execute();
+
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['joinedid'];
    return $ids;
 }
@@ -168,35 +190,42 @@ function get_joined_by_category( $catid ) {
 function parse_joined_template( $id ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
-   $query = "SELECT * FROM `$db_joined` WHERE `joinedid` = '$id'";
-   $result = mysql_query( $query );
+   $query = "SELECT * FROM `$db_joined` WHERE `joinedid` = :id";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $info = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $info = $result->fetch();
 
    $query = "SELECT `setting`, `value` FROM `$db_settings` WHERE `setting` =" .
       ' "joined_images_dir" OR `setting` = "root_path_absolute" ' .
       ' OR `setting` = "root_path_web"';
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
    $dir = '';
    $root_web = '';
    $root_abs = '';
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       if( $row['setting'] == 'joined_images_dir' )
          $dir = $row['value'];
       else if( $row['setting'] == 'root_path_absolute' )
@@ -212,14 +241,16 @@ function parse_joined_template( $id ) {
 
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
       "'joined_template'";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $setting = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $setting = $result->fetch();
 
    $formatted = str_replace( 'enth3-url', $info['url'], $setting['value'] );
    $formatted = str_replace( 'enth3-subject', $info['subject'], $formatted );
@@ -240,10 +271,12 @@ function parse_joined_template( $id ) {
 function search_joined( $search, $status = 'all', $start = 'none' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT `joinedid` FROM `$db_joined` WHERE ( MATCH( " .
       "`subject`, `desc`, `comments` ) " .
@@ -259,26 +292,32 @@ function search_joined( $search, $status = 'all', $start = 'none' ) {
    if( $start != 'none' && ctype_digit( $start ) ) {
       $settingq = "SELECT `value` FROM `$db_settings` " .
          "WHERE `setting` = 'per_page'";
-      $result = mysql_query( $settingq );
-      $row = mysql_fetch_array( $result );
+      $result = $db_link->prepare($settingq);
+      $result->execute();
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $limit = $row['value'];
       $query .= " LIMIT $start, $limit";
    }
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   $result = mysql_query( $query );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['joinedid'];
    return $ids;
 }
@@ -290,22 +329,31 @@ function add_joined( $catids, $url, $subject, $desc, $comments,
    require 'config.php';
    $cats = implode( '|', $catids );
    $cats = '|' . trim( $cats, '|' ) . '|';
-   $query = "INSERT INTO `$db_joined` VALUES( null, '$cats', '$url', " .
-      "'$subject', '$desc', '$comments', null, NOW(), '$pending' )";
+   $query = "INSERT INTO `$db_joined` VALUES( null, :cats, :url, " .
+      ":subject, :desc, :comments, null, NOW(), :pending )";
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   $result = mysql_query( $query );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
+   $result = $db_link->prepare($query);
+   $result->bindParam(':cats', $cats, PDO::PARAM_STR);
+   $result->bindParam(':url', $url, PDO::PARAM_STR);
+   $result->bindParam(':subject', $subject, PDO::PARAM_STR);
+   $result->bindParam(':desc', $desc, PDO::PARAM_STR);
+   $result->bindParam(':comments', $comments, PDO::PARAM_STR);
+   $result->bindParam(':pending', $pending, PDO::PARAM_STR);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
-   return mysql_insert_id();
+   return $db_link->lastInsertId();
 }
 
 
@@ -344,16 +392,20 @@ function edit_joined( $id, $image = '', $catid = array(), $url = '',
       $query .= "`comments` = null, ";
 
    $query = rtrim( $query, ', ' );
-   $query .= " WHERE `joinedid` = '$id'";
+   $query .= " WHERE `joinedid` = :id";
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   $result = mysql_query( $query );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
@@ -365,16 +417,20 @@ function edit_joined( $id, $image = '', $catid = array(), $url = '',
 /*___________________________________________________________________________*/
 function delete_joined( $id ) {
    require 'config.php';
-   $query = "DELETE FROM `$db_joined` WHERE `joinedid` = '$id'";
+   $query = "DELETE FROM `$db_joined` WHERE `joinedid` = :id";
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   $result = mysql_query( $query );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }

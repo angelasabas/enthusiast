@@ -201,20 +201,23 @@ if( isset( $_POST['enth_join'] ) && $_POST['enth_join'] == 'yes' ) {
          exit;
       }
 
-      $query = "INSERT INTO `$table` VALUES( '$email', '$name', ";
+      $query = "INSERT INTO `$table` VALUES( :email, :name, ";
       if( $info['country'] == 1 )
          $query .= "'$country', ";
-      $query .= "'$url', ";
+      $query .= ":url, ";
       foreach( $fields as $field )
          $query .= '\'' . $values[$field] . '\', ';
-      $query .= "1, MD5( '$password' ), '$show_email', 1, NULL )";
+      $query .= "1, MD5( :password ), :show_email, 1, NULL )";
 
-      $db_link = mysql_connect( $info['dbserver'], $info['dbuser'],
-         $info['dbpassword'] )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $info['dbdatabase'], $db_link )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      $result = mysql_query( $query, $db_link );
+      $db_link = new PDO('mysql:host=' . $info['dbserver'] . ';dbname=' . $info['dbdatabase'] . ';charset=utf8', $info['dbuser'], $info['dbpassword']);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      $result = $db_link->prepare($query);
+      $result->bindParam(':email', $email, PDO::PARAM_STR);
+      $result->bindParam(':name', $name, PDO::PARAM_STR);
+      $result->bindParam(':url', $url, PDO::PARAM_STR);
+      $result->bindParam(':password', $password, PDO::PARAM_STR);
+      $result->bindParam(':show_email', $show_email, PDO::PARAM_STR);
+      $result->execute();
 
       // if addition is successful
       if( $result ) {
@@ -303,9 +306,9 @@ if( isset( $_POST['enth_join'] ) && $_POST['enth_join'] == 'yes' ) {
             }
          }
       } else {
-         if( mysql_errno() != 1062 ) {
+         if( $result->errorCode() != 1062 ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
 ?>
             <p<?php echo $errorstyle ?>>An error occured while attempting to add you to the pending

@@ -102,22 +102,24 @@ foreach( $ownedarray as $o ) {
    if( $dbserver != $db_server || $dbdatabase != $db_database ||
       $dbuser != $db_user || $dbpassword != $db_password ) {
       // if not on same database, get counts NOW except if it can't be accessed; if not, skip this one
-      $db_link = mysql_connect( $dbserver, $dbuser, $dbpassword );
+      $db_link = new PDO('mysql:host=' . $db_server . ';charset=utf8', $db_user, $db_password);
 	  if( $db_link === false )
 	  	continue; // if it can't be accessed; if not, skip this one
-      $connected = mysql_select_db( $dbdatabase );
+      $connected = $db_link->query('USE ' . $dbdatabase);
       if( !$connected )
          continue; // if it can't be accessed; if not, skip this one
       $thisone = "SELECT COUNT(*) AS `total` FROM `$table` WHERE " .
          '`pending` = 0';
-      $result = mysql_query( $thisone );
+      $result = $db_link->prepare($thisone);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $row = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $collective_total_fans_approved += $row['total'];
    } else {
       $query .= "SELECT COUNT(*) AS `rowcount` FROM `$table` WHERE " .
@@ -128,19 +130,23 @@ foreach( $ownedarray as $o ) {
 $query = rtrim( $query, "! " );
 $query = str_replace( '!!!', 'UNION ALL', $query );
 
-$db_link = mysql_connect( $db_server, $db_user, $db_password )
-   or die( DATABASE_CONNECT_ERROR . mysql_error() );
-mysql_select_db( $db_database )
-   or die( DATABASE_CONNECT_ERROR . mysql_error() );
+try {
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+   die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+}
 if( $query != '' ) { // if there IS a query
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   while( $row = mysql_fetch_array( $result ) ) {
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() ) {
       $collective_total_fans_approved += $row['rowcount'];
    }
 }
@@ -160,21 +166,23 @@ foreach( $ownedarray as $o ) {
    if( $dbserver != $db_server || $dbdatabase != $db_database ||
       $dbuser != $db_user || $dbpassword != $db_password ) {
       // if not on same database, get counts NOW
-      $db_link = mysql_connect( $dbserver, $dbuser, $dbpassword );
+      $db_link = new PDO('mysql:host=' . $db_server . ';charset=utf8', $db_user, $db_password);
 	  if( $db_link === false )
 	  	continue; // if it can't be accessed; if not, skip this one
-      $connected = mysql_select_db( $dbdatabase );
+      $connected = $db_link->query('USE ' . $dbdatabase);
       if( !$connected )
          continue; // if it can't be accessed; if not, skip this one
       $thisone = "SELECT COUNT(`email`) AS `total` FROM `$table`";
-      $result = mysql_query( $thisone );
+      $result = $db_link->prepare($thisone);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $row = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $collective_total_fans += $row['total'];
    } else {
       $query .= "SELECT COUNT(`email`) AS `rowcount` FROM `$table`";
@@ -184,20 +192,24 @@ foreach( $ownedarray as $o ) {
 $query = rtrim( $query, '! ' ); //echo $query;
 $query = str_replace( '!!!', 'UNION ALL', $query );
 
-$db_link = mysql_connect( $db_server, $db_user, $db_password )
-   or die( DATABASE_CONNECT_ERROR . mysql_error() );
-mysql_select_db( $db_database )
-   or die( DATABASE_CONNECT_ERROR . mysql_error() );
+try {
+   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+   die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+}
 
 if( $query != '' ) {
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   while( $row = mysql_fetch_array( $result ) ) {
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() ) {
       $collective_total_fans += $row['rowcount'];
    }
 }
@@ -211,14 +223,16 @@ $collective_total_fans_pending = $collective_total_fans -
 $query = "SELECT YEAR( `opened` ) AS `year`, MONTH( `opened` ) AS `month`, " .
    "DAYOFMONTH( `opened` ) AS `day` FROM `$db_owned` WHERE " .
    "`status` != 0 AND `opened` != '0000-00-00' ORDER BY `opened` ASC LIMIT 1";
-$result = mysql_query( $query );
+$result = $db_link->prepare($query);
+$result->execute();
 if( !$result ) {
    log_error( __FILE__ . ':' . __LINE__,
-      'Error executing query: <i>' . mysql_error() .
+      'Error executing query: <i>' . $result->errorInfo()[2] .
       '</i>; Query is: <code>' . $query . '</code>' );
    die( STANDARD_ERROR );
 }
-$row = mysql_fetch_array( $result );
+$result->setFetchMode(PDO::FETCH_ASSOC);
+$row = $result->fetch();
 $owned_growth_rate = 0;
 $days = 1;
 if( $row && count( $row ) > 0 ) {
@@ -243,14 +257,16 @@ $collective_fans_growth_rate = round( $collective_total_fans_approved / $days,
 $query = "SELECT YEAR( `added` ) AS `year`, MONTH( `added` ) AS `month`, " .
    "DAYOFMONTH( `added` ) AS `day` FROM `$db_joined` WHERE " .
    "`added` != '0000-00-00' ORDER BY `added` ASC LIMIT 1";
-$result = mysql_query( $query );
+$result = $db_link->prepare($query);
+$result->execute();
 if( !$result ) {
    log_error( __FILE__ . ':' . __LINE__,
-      'Error executing query: <i>' . mysql_error() .
+      'Error executing query: <i>' . $result->errorInfo()[2] .
       '</i>; Query is: <code>' . $query . '</code>' );
    die( STANDARD_ERROR );
 }
-$row = mysql_fetch_array( $result );
+$result->setFetchMode(PDO::FETCH_ASSOC);
+$row = $result->fetch();
 $joined_growth_rate = 0;
 $days = 1;
 if( $row && count( $row ) > 0 ) {

@@ -282,43 +282,32 @@ function do_step1() {
             '`added` date default NULL, ' .
             'PRIMARY KEY( email ), ' .
             'FULLTEXT( email, name, country, url ) ' .
-            ') TYPE=MyISAM;';
+            ') ENGINE=MyISAM;';
 
-         $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-            or die( DATABASE_CONNECT_ERROR . mysql_error() );
-         if( $db_link_list === false ) {
-?>
-            <p class="error">
-            Unable to connect to the database server.
-            </p>
-<?php
-            return false;
+         try {
+            $db_link_list = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+            $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+         } catch (PDOException $e) {
+            die( DATABASE_CONNECT_ERROR . $e->getMessage() );
          }
-         $db_selected = mysql_select_db( $dbdatabase )
-            or die( DATABASE_CONNECT_ERROR . mysql_error() );
-         if( !$db_selected ) {
-?>
-            <p class="error">
-            Unable to connect to the database.
-            </p>
-<?php
-            return false;
-         }
-         $result = mysql_query( $query, $db_link_list );
+         $result = $db_link_list->prepare($query);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             echo '<p class="error">Listing database creation failed.</p>';
             die( STANDARD_ERROR );
          }
-         mysql_close( $db_link_list );
+         $db_link_list = null;
       }
 
-      $db_link = mysql_connect( $db_server, $db_user, $db_password )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
-      mysql_select_db( $db_database )
-         or die( DATABASE_CONNECT_ERROR . mysql_error() );
+      try {
+         $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       // setup temp database values
       $stat = '0';
@@ -346,14 +335,31 @@ function do_step1() {
          '`catid`, `status`, `emailsignup`, `emailapproved`, `emailupdate`, ' .
          '`emaillostpass`, `listtemplate`, `affiliatestemplate`, ' .
          '`statstemplate`, `opened` ) ' .
-         "VALUES ( null, '$dbserver', '$dbuser', '$dbpassword', " .
-         "'$dbdatabase', '$dbtable', '$subject', '$email', '$catid', '$stat', " .
-         "'$signup', '$approval', '$update', '$lostpass', '$listtemplate', " .
-         "'$affiliatestemplate', '$statstemplate', CURDATE() )";
-      $result = mysql_query( $query );
+         "VALUES ( null, :dbserver, :dbuser, :dbpassword, " .
+         ":dbdatabase, :dbtable, :subject, :email, :catid, :stat, " .
+         ":signup, :approval, :update, :lostpass, :listtemplate, " .
+         ":affiliatestemplate, :statstemplate, CURDATE() )";
+      $result = $db_link->prepare($query);
+      $result->bindParam(':dbserver', $dbserver, PDO::PARAM_STR);
+      $result->bindParam(':dbuser', $dbuser, PDO::PARAM_STR);
+      $result->bindParam(':dbpassword', $dbpassword, PDO::PARAM_STR);
+      $result->bindParam(':dbdatabase', $dbdatabase, PDO::PARAM_STR);
+      $result->bindParam(':dbtable', $dbtable, PDO::PARAM_STR);
+      $result->bindParam(':subject', $subject, PDO::PARAM_STR);
+      $result->bindParam(':email', $email, PDO::PARAM_STR);
+      $result->bindParam(':catid', $catid, PDO::PARAM_INT);
+      $result->bindParam(':stat', $stat, PDO::PARAM_STR);
+      $result->bindParam(':signup', $signup, PDO::PARAM_STR);
+      $result->bindParam(':approval', $approval, PDO::PARAM_STR);
+      $result->bindParam(':update', $update, PDO::PARAM_STR);
+      $result->bindParam(':lostpass', $lostpass, PDO::PARAM_STR);
+      $result->bindParam(':listtemplate', $listtemplate, PDO::PARAM_STR);
+      $result->bindParam(':affiliatestemplate', $affiliatestemplate, PDO::PARAM_STR);
+      $result->bindParam(':statstemplate', $statstemplate, PDO::PARAM_STR);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          echo '<p class="error">Listing database creation failed.</p>';
          die( STANDARD_ERROR );
