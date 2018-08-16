@@ -27,8 +27,12 @@
 function get_affiliates( $listing = 'none', $start = 'none' ) {
    require 'config.php';
 
-   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = 'per_page'";
    $result = $db_link->prepare($query);
@@ -73,8 +77,12 @@ function get_affiliates( $listing = 'none', $start = 'none' ) {
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
-      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       $afftable = $table . '_affiliates';
       $query = "SELECT * FROM `$afftable` ORDER BY `title`";
@@ -100,8 +108,12 @@ function get_affiliates( $listing = 'none', $start = 'none' ) {
 function add_affiliate( $url, $title, $email, $listing = 'collective' ) {
    require 'config.php';
 
-   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = '';
    if( $listing == 'collective' || $listing == '' )
@@ -127,8 +139,12 @@ function add_affiliate( $url, $title, $email, $listing = 'collective' ) {
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
-      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       $afftable = $table . '_affiliates';
       $query = "INSERT INTO `$afftable` VALUES( " .
@@ -155,8 +171,12 @@ function edit_affiliate( $id, $listing = '', $image = '', $url = '',
    $title = '', $email = '' ) {
    require 'config.php';
 
-   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = '';
    if( $listing == '' || $listing == 'collective' ) {
@@ -193,8 +213,12 @@ function edit_affiliate( $id, $listing = '', $image = '', $url = '',
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
-      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       $afftable = $table . '_affiliates';
       $query = "UPDATE `$afftable` SET ";
@@ -231,8 +255,12 @@ function edit_affiliate( $id, $listing = '', $image = '', $url = '',
 /*___________________________________________________________________________*/
 function delete_affiliate( $id, $listing = '' ) {
    require 'config.php';
-   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "DELETE FROM `$db_affiliates` WHERE `affiliateid` = :id";
    if( $listing != '' && $listing != 'collective' ){
@@ -255,8 +283,12 @@ function delete_affiliate( $id, $listing = '' ) {
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
-      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       $afftable = $table . '_affiliates';
       $query = "DELETE FROM `$afftable` WHERE `affiliateid` = :id";
@@ -279,8 +311,12 @@ function delete_affiliate( $id, $listing = '' ) {
 function get_affiliate_info( $id, $listing = 'collective' ) {
    require 'config.php';
 
-   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = 'SELECT `url`, `title`, `imagefile`, `email` ' .
       "FROM `$db_affiliates` WHERE `affiliateid` = :id";
@@ -304,8 +340,12 @@ function get_affiliate_info( $id, $listing = 'collective' ) {
       $dbuser = $info['dbuser'];
       $dbpassword = $info['dbpassword'];
 
-      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
-      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       $afftable = $table . '_affiliates';
       $query = "SELECT `url`, `title`, `imagefile`, `email` FROM `$afftable`" .
@@ -330,8 +370,12 @@ function get_affiliate_info( $id, $listing = 'collective' ) {
 function parse_affiliate_add_email( $id, $listing = '' ) {
    require 'config.php';
 
-   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    // get owner name
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
@@ -484,8 +528,12 @@ function parse_affiliate_add_email( $id, $listing = '' ) {
 function parse_affiliates_template( $id, $listing = '' ) {
    require 'config.php';
 
-   $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-   $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    // get template
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
@@ -530,7 +578,12 @@ function parse_affiliates_template( $id, $listing = '' ) {
 
       if( $dbserver != $db_server || $dbdatabase != $db_database ||
          $dbuser != $db_user || $dbpassword != $db_password ) {
-         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         try {
+            $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+            $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+         } catch (PDOException $e) {
+            die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+         }
       }
 
       $query = "SELECT * FROM `$afftable` WHERE `affiliateid` = :id";
@@ -549,7 +602,12 @@ function parse_affiliates_template( $id, $listing = '' ) {
       // reconnect to original database now
       if( $dbserver != $db_server || $dbdatabase != $db_database ||
          $dbuser != $db_user || $dbpassword != $db_password ) {
-         $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+         try {
+            $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+            $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+         } catch (PDOException $e) {
+            die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+         }
       }
 
    } else {
