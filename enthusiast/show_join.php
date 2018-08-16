@@ -209,8 +209,12 @@ if( isset( $_POST['enth_join'] ) && $_POST['enth_join'] == 'yes' ) {
          $query .= '\'' . $values[$field] . '\', ';
       $query .= "1, MD5( :password ), :show_email, 1, NULL )";
 
-      $db_link = new PDO('mysql:host=' . $info['dbserver'] . ';dbname=' . $info['dbdatabase'] . ';charset=utf8', $info['dbuser'], $info['dbpassword']);
-      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      try {
+         $db_link = new PDO('mysql:host=' . $info['dbserver'] . ';dbname=' . $info['dbdatabase'] . ';charset=utf8', $info['dbuser'], $info['dbpassword']);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
       $result = $db_link->prepare($query);
       $result->bindParam(':email', $email, PDO::PARAM_STR);
       $result->bindParam(':name', $name, PDO::PARAM_STR);

@@ -48,8 +48,12 @@ if( !defined( 'STANDARD_ERROR' ) )
 // get installation path
 $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
    '"installation_path"';
-$db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
-$db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+try {
+  $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+  $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+  die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+}
 $result = $db_link->prepare($query);
 $result->execute();
 if( !$result ) {
