@@ -182,13 +182,13 @@ function edit_affiliate( $id, $listing = '', $image = '', $url = '',
    if( $listing == '' || $listing == 'collective' ) {
       $query = "UPDATE `$db_affiliates` SET ";
       if( $url )
-         $query .= "`url` = :url, ";
+         $query .= "`url` = '$url', ";
       if( $title )
-         $query .= "`title` = :title, ";
+         $query .= "`title` = '$title', ";
       if( $email )
-         $query .= "`email` = :email, ";
+         $query .= "`email` = '$email', ";
       if( $image != '' && $image != 'null' )
-         $query .= "`imagefile` = :image, ";
+         $query .= "`imagefile` = '$image', ";
       else if( $image == 'null' )
          $query .= '`imagefile` = null, ';
       $query .= "`added` = CURDATE() WHERE `affiliateid` = :id";
@@ -223,23 +223,19 @@ function edit_affiliate( $id, $listing = '', $image = '', $url = '',
       $afftable = $table . '_affiliates';
       $query = "UPDATE `$afftable` SET ";
       if( $url )
-         $query .= "`url` = :url, ";
+         $query .= "`url` = '$url', ";
       if( $title )
-         $query .= "`title` = :title, ";
+         $query .= "`title` = '$title', ";
       if( $email )
-         $query .= "`email` = :email, ";
+         $query .= "`email` = '$email', ";
       if( $image != '' && $image != 'null' )
-         $query .= "`imagefile` = :image, ";
+         $query .= "`imagefile` = '$image', ";
       else if( $image == 'null' )
          $query .= '`imagefile` = null, ';
       $query .= "`added` = CURDATE() WHERE `affiliateid` = :id";
    }
 
    $result = $db_link->prepare($query);
-   $result->bindParam(':url', $url, PDO::PARAM_STR);
-   $result->bindParam(':title', $title, PDO::PARAM_STR);
-   $result->bindParam(':email', $email, PDO::PARAM_STR);
-   $result->bindParam(':image', $image, PDO::PARAM_STR);
    $result->bindParam(':id', $id, PDO::PARAM_INT);
    $result->execute();
    if( !$result ) {
