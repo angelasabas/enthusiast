@@ -329,7 +329,7 @@ function get_affiliate_info( $id, $listing = 'collective' ) {
          die( STANDARD_ERROR );
       }
       $result->setFetchMode(PDO::FETCH_ASSOC);
-      $info = fetch();
+      $info = $result->fetch();
       $table = $info['dbtable'];
       $dbserver = $info['dbserver'];
       $dbdatabase = $info['dbdatabase'];
