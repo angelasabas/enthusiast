@@ -253,7 +253,8 @@ function get_ancestors( $id ) {
       die( STANDARD_ERROR );
    }
    $result->setFetchMode(PDO::FETCH_ASSOC);
-   $row = $result->fetch(); $i = 0;
+   $row = $result->fetch();
+   $i = 0;
    while( $row['parent'] != 0 && $row['parent'] != '' ) {
       $family[] = $row['parent'];
       $query = "SELECT `parent` FROM `$db_category` WHERE `catid` = '" .

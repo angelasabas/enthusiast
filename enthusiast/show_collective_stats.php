@@ -102,7 +102,7 @@ foreach( $ownedarray as $o ) {
    if( $dbserver != $db_server || $dbdatabase != $db_database ||
       $dbuser != $db_user || $dbpassword != $db_password ) {
       // if not on same database, get counts NOW except if it can't be accessed; if not, skip this one
-      $db_link = new PDO('mysql:host=' . $db_server . ';charset=utf8', $db_user, $db_password);
+      $db_link = new PDO('mysql:host=' . $dbserver . ';charset=utf8', $dbuser, $dbpassword);
 	  if( $db_link === false )
 	  	continue; // if it can't be accessed; if not, skip this one
       $connected = $db_link->query('USE ' . $dbdatabase);
@@ -166,7 +166,7 @@ foreach( $ownedarray as $o ) {
    if( $dbserver != $db_server || $dbdatabase != $db_database ||
       $dbuser != $db_user || $dbpassword != $db_password ) {
       // if not on same database, get counts NOW
-      $db_link = new PDO('mysql:host=' . $db_server . ';charset=utf8', $db_user, $db_password);
+      $db_link = new PDO('mysql:host=' . $dbserver . ';charset=utf8', $dbuser, $dbpassword);
 	  if( $db_link === false )
 	  	continue; // if it can't be accessed; if not, skip this one
       $connected = $db_link->query('USE ' . $dbdatabase);

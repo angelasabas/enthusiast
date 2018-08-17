@@ -469,8 +469,12 @@ function parse_affiliate_add_email( $id, $listing = '' ) {
       $url = $listinginfo['url'];
       $email = $listinginfo['email'];
 
-      $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
-      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      try {
+         $db_link = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+      }
 
       $query = "SELECT * FROM `$afftable` WHERE `affiliateid` = :id";
       $result = $db_link->prepare($query);

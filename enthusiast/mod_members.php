@@ -571,7 +571,7 @@ function edit_member_info( $id, $email, $fields, $hold = 'no' ) {
    if( $hold != 'no' && $info['holdupdate'] == 1 ) {
       // place on pending!
       $query = "UPDATE `$table` SET `pending` = 1 WHERE `email` = :email";
-      $result = $db_link->prepare($query);
+      $result = $db_link_list->prepare($query);
       $result->bindParam(':email', $email, PDO::PARAM_STR);
       $result->execute();
       if( !$result ) {
@@ -584,7 +584,7 @@ function edit_member_info( $id, $email, $fields, $hold = 'no' ) {
 
    // update added date
    $query = "UPDATE `$table` SET `added` = CURDATE() WHERE `email` = :email";
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->bindParam(':email', $email, PDO::PARAM_STR);
    $result->execute();
    if( !$result ) {

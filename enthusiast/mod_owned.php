@@ -1504,7 +1504,7 @@ function delete_owned( $id ) {
    // drop affiliates table
    $afftable = $table . '_affiliates';
    $query = "DROP TABLE IF EXISTS `$afftable`";
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
@@ -1515,7 +1515,7 @@ function delete_owned( $id ) {
 
    // drop actual table
    $query = "DROP TABLE `$table`";
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
@@ -1866,7 +1866,7 @@ function get_listing_stats( $id, $extended = false ) {
    // get added date in main table - make sure it is only approved members
    $query = "SELECT `added` FROM `$table` WHERE `pending` = 0 " .
       'ORDER BY `added` DESC LIMIT 1';
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
@@ -1881,7 +1881,7 @@ function get_listing_stats( $id, $extended = false ) {
    // get most recent members
    $query = "SELECT * FROM `$table` WHERE `added` = '" .
       $stats['lastupdated'] . '\'';
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
@@ -1898,7 +1898,7 @@ function get_listing_stats( $id, $extended = false ) {
    if( $info['affiliates'] == 1 ) {
       $query = "SELECT `added` FROM `$afftable` ORDER BY `added` " .
          'DESC LIMIT 1';
-      $result = $db_link->prepare($query);
+      $result = $db_link_list->prepare($query);
       $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
@@ -1916,7 +1916,7 @@ function get_listing_stats( $id, $extended = false ) {
          // now we take the newest affiliates added
          $query = "SELECT * FROM `$afftable` WHERE `added` = '" .
             $row['added'] . "'";
-         $result = $db_link->prepare($query);
+         $result = $db_link_list->prepare($query);
          $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
@@ -1967,7 +1967,7 @@ function get_listing_stats( $id, $extended = false ) {
 
          // get total affiliates
          $query = "SELECT COUNT(*) AS `count` FROM `$afftable`";
-         $result = $db_link->prepare($query);
+         $result = $db_link_list->prepare($query);
          $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
@@ -1982,7 +1982,7 @@ function get_listing_stats( $id, $extended = false ) {
          // random affiliate
          $rand = rand( 1, $stats['totalaffiliates'] ) - 1;
          $query = "SELECT * FROM `$afftable` LIMIT :rand, 1";
-         $result = $db_link->prepare($query);
+         $result = $db_link_list->prepare($query);
          $result->bindParam(':rand', $rand, PDO::PARAM_INT);
          $result->execute();
          if( !$result ) {
@@ -2040,7 +2040,7 @@ function get_listing_stats( $id, $extended = false ) {
 
    // get total number of members
    $query = "SELECT COUNT(*) AS `count` FROM `$table` WHERE `pending` = 0";
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
@@ -2056,7 +2056,7 @@ function get_listing_stats( $id, $extended = false ) {
    $rand = rand( 1, $stats['total'] ) - 1;
    if ($rand < 1) $rand++; // Fix for 0 or negative output
    $query = "SELECT * FROM `$table` WHERE `pending` = 0 LIMIT :rand, 1";
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->bindParam(':rand', $rand, PDO::PARAM_INT);
    $result->execute();
    if( !$result ) {
@@ -2091,7 +2091,7 @@ function get_listing_stats( $id, $extended = false ) {
 
    // get total number of PENDING members
    $query = "SELECT COUNT(*) AS `count` FROM `$table` WHERE `pending` = 1";
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
@@ -2108,7 +2108,7 @@ function get_listing_stats( $id, $extended = false ) {
       "`month`, DAYOFMONTH( `added` ) AS `day` FROM `$table` WHERE " .
       "`pending` = 0 AND `added` != '0000-00-00' ORDER BY `added` ASC " .
       'LIMIT 1';
-   $result = $db_link->prepare($query);
+   $result = $db_link_list->prepare($query);
    $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
@@ -2133,7 +2133,7 @@ function get_listing_stats( $id, $extended = false ) {
    if( $info['country'] == 1 ){
       $query = 'SELECT COUNT( DISTINCT( `country` ) ) AS `countries` FROM ' .
          "`$table` WHERE `pending` = 0";
-      $result = $db_link->prepare($query);
+      $result = $db_link_list->prepare($query);
       $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
