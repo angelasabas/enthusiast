@@ -143,9 +143,9 @@ if( isset( $_POST['enth_join'] ) && $_POST['enth_join'] == 'yes' ) {
    else
       $messages['name'] = 'You must enter your name.';
 
-   $matchstring = "^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+" .
-      "@([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}$";
-   if( $_POST['enth_email'] && ereg( $matchstring, $_POST['enth_email'] ) )
+   $matchstring = "/^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+" .
+      "@([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}$/";
+   if( $_POST['enth_email'] && preg_match( $matchstring, $_POST['enth_email'] ) )
       $email = clean( $_POST['enth_email'] );
    else
       $messages['email'] = 'You must enter a valid email address.';
