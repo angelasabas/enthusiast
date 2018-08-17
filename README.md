@@ -5,5 +5,6 @@
 ## Changes
 
 - Converted all mysql_* functions to PDO
-- Replaced all instances of `TYPE=MyISAM` to `ENGINE=MyISAM`
-- Removed deprecated reference operators in `enthusiast/Mail.php` and `enthusiast/PEAR.php`
+- Replaced all instances of `TYPE=MyISAM` with `ENGINE=MyISAM`
+- Replaced `ereg()` with `preg_match()`
+- Updated [PEAR](https://pear.php.net/package/PEAR/) to v1.10.5 and [PEAR/Mail](https://pear.php.net/package/Mail/) to v1.4.1
