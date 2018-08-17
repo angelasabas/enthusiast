@@ -12,7 +12,7 @@
 
 ## Upgrading
 
-If you are using an older version of Enthusiast:
+If you are using [this version](https://github.com/angelasabas/enthusiast) of Enthusiast:
 
 1. **Back up all your current Enthusiast configurations, files, and databases first.**
 2. Take note of your database information in all your `config.php` files.
