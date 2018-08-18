@@ -103,8 +103,11 @@ function flush_logs() {
    try {
       $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
       $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      $result = $db_link->prepare($query);
+      $result->execute();
    } catch (PDOException $e) {
       die( DATABASE_CONNECT_ERROR . $e->getMessage() );
    }
+   return $result;
 }
 ?>
