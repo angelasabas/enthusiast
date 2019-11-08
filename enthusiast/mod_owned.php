@@ -1997,7 +1997,7 @@ function get_listing_stats( $id, $extended = false ) {
          if( $info['linktarget'] ) {
             $stats['randomaffiliate'] .= '" target="' . $info['linktarget'];
          }
-         $stats['randomaffiliates'] .= '">' . $randaff['title'] . '</a> ';
+         $stats['randomaffiliate'] .= '">' . $randaff['title'] . '</a> ';
          $stats['randomaffiliateimg'] = parse_affiliates_template(
             $randaff['affiliateid'], $info['listingid'] );
 
