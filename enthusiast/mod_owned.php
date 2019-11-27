@@ -1981,6 +1981,7 @@ function get_listing_stats( $id, $extended = false ) {
 
          // random affiliate
          $rand = rand( 1, $stats['totalaffiliates'] ) - 1;
+         if ($rand < 1) $rand++; // Fix for 0 or negative output
          $query = "SELECT * FROM `$afftable` LIMIT :rand, 1";
          $result = $db_link_list->prepare($query);
          $result->bindParam(':rand', $rand, PDO::PARAM_INT);
