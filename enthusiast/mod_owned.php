@@ -27,10 +27,12 @@
 function get_owned( $status = 'all', $start = 'none', $bydate = 'no' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT `listingid` FROM `$db_owned`";
 
@@ -49,22 +51,26 @@ function get_owned( $status = 'all', $start = 'none', $bydate = 'no' ) {
    if( $start != 'none' && ctype_digit( $start ) ) {
       $settingq = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
          "'per_page'";
-      $result = mysql_query( $settingq );
-      $row = mysql_fetch_array( $result );
+      $result = $db_link->prepare($settingq);
+      $result->execute();
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $limit = $row['value'];
       $query .= " LIMIT $start, $limit";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['listingid'];
    return $ids;
 }
@@ -76,24 +82,28 @@ function get_owned( $status = 'all', $start = 'none', $bydate = 'no' ) {
 function get_listing_info( $id = '', $table = '' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$id'";
    if( $table )
       $query = "SELECT * FROM `$db_owned` WHERE `dbtable` = '$table'";
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    if( count( $row ) == 0 || !$row )
       return array();
 
@@ -694,20 +704,25 @@ function edit_owned( $id, $fields ) {
    $changes = array();
 
    // get listing info
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
-   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$id'";
-   $result = mysql_query( $query );
+   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :id";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $info = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $info = $result->fetch();
    $table = $info['dbtable'];
    $dbserver = $info['dbserver'];
    $dbdatabase = $info['dbdatabase'];
@@ -724,14 +739,16 @@ function edit_owned( $id, $fields ) {
             if( $value == $dbdatabase )
                continue; // don't change
             $query = "UPDATE `$db_owned` SET `$field` = '$value' WHERE " .
-               "`listingid` = '$id'";
+               "`listingid` = :id";
             if( $value == 'null' )
                $query = "UPDATE `$db_owned` SET `$field` = null WHERE " .
-                  "`listingid` = '$id'";
-            $result = mysql_query( $query );
+                  "`listingid` = :id";
+            $result = $db_link->prepare($query);
+            $result->bindParam(':id', $id, PDO::PARAM_INT);
+            $result->execute();
             if( !$result ) {
                log_error( __FILE__ . ':' . __LINE__,
-                  'Error executing query: <i>' . mysql_error() .
+                  'Error executing query: <i>' . $result->errorInfo()[2] .
                   '</i>; Query is: <code>' . $query . '</code>' );
                die( STANDARD_ERROR );
             }
@@ -741,29 +758,35 @@ function edit_owned( $id, $fields ) {
          case 'dbtable' :
             if( $value != $table ) {
                // change data! we actually change the database table
-               $db_link_list = mysql_connect( $dbserver, $dbuser,
-                  $dbpassword ) or die( DATABASE_CONNECT_ERROR . mysql_error() );
-               mysql_select_db( $dbdatabase )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
+               try {
+                  $db_link_list = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+                  $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+               } catch (PDOException $e) {
+                  die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+               }
 
                // rename physically
                $query = "ALTER TABLE `$table` RENAME `$value`";
-               $result = mysql_query( $query, $db_link_list );
+               $result = $db_link_list->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
-               mysql_close( $db_link_list );
+               $db_link_list = null;
 
                // update db_owned table
-               $query = "UPDATE `$db_owned` SET `dbtable` = '$value' WHERE " .
-                  "`listingid` = '$id'";
-               $result = mysql_query( $query, $db_link );
+               $query = "UPDATE `$db_owned` SET `dbtable` = :value WHERE " .
+                  "`listingid` = :id";
+               $result = $db_link->prepare($query);
+               $result->bindParam(':value', $value, PDO::PARAM_STR);
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
@@ -775,30 +798,35 @@ function edit_owned( $id, $fields ) {
             // get info
             if( $value == 'leave' )
                continue;
-            $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-               or die( DATABASE_CONNECT_ERROR . mysql_error() );
-            mysql_select_db( $dbdatabase )
-               or die( DATABASE_CONNECT_ERROR . mysql_error() );
+               try {
+                  $db_link_list = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+                  $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+               } catch (PDOException $e) {
+                  die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+               }
 
             if( $value == 'disable' ) {
                // alter table
                $query = "ALTER TABLE `$table` DROP `country`";
-               $result = mysql_query( $query, $db_link_list );
+               $result = $db_link_list->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
-               mysql_close( $db_link_list );
+               $db_link_list = null;
 
                // update db_owned
                $query = "UPDATE `$db_owned` SET `country` = 0 WHERE " .
-                  "`listingid` = '$id'";
-               $result = mysql_query( $query, $db_link );
+                  "`listingid` = :id";
+               $result = $db_link->prepare($query);
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
@@ -808,42 +836,47 @@ function edit_owned( $id, $fields ) {
                // alter table
                $query = "ALTER TABLE `$table` ADD `country` VARCHAR(128) " .
                   "NOT NULL default '' AFTER `name`";
-               $result = mysql_query( $query );
+               $result = $db_link_list->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
 
                // drop fulltext index
                $query = "ALTER TABLE `$table` DROP INDEX `email`";
-               $result = mysql_query( $query );
+               $result = $db_link_list->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                }
 
                // re-add fulltext index
                $query = "ALTER TABLE `$table` ADD FULLTEXT ( `email`, " .
                   "`name`, `country`, `url` )";
-               $result = mysql_query( $query );
+               $result = $db_link_list->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
-               mysql_close( $db_link_list );
+               $db_link_list = null;
 
                // update db_owned
                $query = "UPDATE `$db_owned` SET `country` = 1 WHERE " .
-                  "`listingid` = '$id'";
-               $result = mysql_query( $query, $db_link );
+                  "`listingid` = :id";
+               $result = $db_link->prepare($query);
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
@@ -857,42 +890,49 @@ function edit_owned( $id, $fields ) {
                continue;
 
             // connect to remote table
-            $db_link_list = mysql_connect( $dbserver, $dbuser, $dbpassword )
-               or die( DATABASE_CONNECT_ERROR . mysql_error() );
-            mysql_select_db( $dbdatabase )
-               or die( DATABASE_CONNECT_ERROR . mysql_error() );
+            try {
+               $db_link_list = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+               $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            } catch (PDOException $e) {
+               die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+            }
 
             if( $value == 'disable' ) {
                // drop aff table
                $afftable = $table . '_affiliates';
                $query = "DROP TABLE `$afftable`";
-               $result = mysql_query( $query );
+               $result = $db_link_list->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
-               mysql_close( $db_link_list );
+               $db_link_list = null;
 
-               $db_link = mysql_connect( $db_server, $db_user, $db_password )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
-               mysql_select_db( $db_database )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
+               try {
+                  $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+                  $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+               } catch (PDOException $e) {
+                  die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+               }
 
                // update db_owned
                $query = "UPDATE `$db_owned` SET `affiliates` = 0, " .
-                  "`affiliatesdir` = NULL WHERE `listingid` = '$id'";
-               $result = mysql_query( $query );
+                  "`affiliatesdir` = NULL WHERE `listingid` = :id";
+               $result = $db_link->prepare();
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
@@ -909,49 +949,58 @@ function edit_owned( $id, $fields ) {
                   "`email` varchar(255) NOT NULL default '', " .
                   "`added` DATE NOT NULL default '0000-00-00', " .
                   "PRIMARY KEY( affiliateid ) " .
-                  ") TYPE=MyISAM AUTO_INCREMENT=1";
-               $result = mysql_query( $query );
+                  ") ENGINE=MyISAM AUTO_INCREMENT=1";
+               $result = $db_link_list->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
-               mysql_close( $db_link_list );
+               $db_link_list = null;
 
-               $db_link = mysql_connect( $db_server, $db_user, $db_password )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
-               mysql_select_db( $db_database )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
+               try {
+                  $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+                  $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+               } catch (PDOException $e) {
+                  die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+               }
 
                // set db_owned
                $query = "UPDATE `$db_owned` SET `affiliates` = 1, " .
                   "`affiliatesdir` = '" . $fields['affiliatesdir'] .
-                  "' WHERE `listingid` = '$id'";
-               $result = mysql_query( $query );
+                  "' WHERE `listingid` = :id";
+               $result = $db_link->prepare($query);
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
                $changes[] = 'Affiliates feature enabled.';
 
             } else if( $value == 'rename' ) {
-               mysql_close( $db_link_list ); // no need for remote database
+               $db_link_list = null; // no need for remote database
 
                // connect to actual database
-               $db_link = mysql_connect( $db_server, $db_user, $db_password )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
-               mysql_select_db( $db_database )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
+               try {
+                  $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+                  $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+               } catch (PDOException $e) {
+                  die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+               }
 
                $query = "UPDATE `$db_owned` SET `affiliatesdir` = '" .
-                  $fields['affiliatesdir'] . "' WHERE `listingid` = '$id'";
-               $result = mysql_query( $query );
+                  $fields['affiliatesdir'] . "' WHERE `listingid` = :id";
+               $result = $db_link->prepare($query);
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
@@ -970,17 +1019,25 @@ function edit_owned( $id, $fields ) {
                $dbuser = $info['dbuser'];
                $dbpassword = $info['dbpassword'];
 
-               $db_link_list = mysql_connect( $dbserver, $dbuser,
-                  $dbpassword ) or die( DATABASE_CONNECT_ERROR . mysql_error() );
-               mysql_select_db( $dbdatabase )
-                  or die( DATABASE_CONNECT_ERROR . mysql_error() );
+               try {
+                  $db_link_list = new PDO('mysql:host=' . $dbserver . ';dbname=' . $dbdatabase . ';charset=utf8', $dbuser, $dbpassword);
+                  $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+               } catch (PDOException $e) {
+                  die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+               }
 
                // get current additional fields
                $query = "DESCRIBE `$table`";
-               $result = mysql_query( $query ) or die( mysql_error() );
+               try {
+                  $result = $db_link->prepare($query);
+                  $result->execute();
+               } catch (PDOException $e) {
+                  die($e->getMessage());
+               }
                $current = array();
                $start = false;
-               while( $row = mysql_fetch_array( $result ) ) {
+               $result->setFetchMode(PDO::FETCH_ASSOC);
+               while( $row = $result->fetch() ) {
                   if( $row['Field'] == 'url' ) {
                      $start = true;
                      continue;
@@ -1007,10 +1064,11 @@ function edit_owned( $id, $fields ) {
                         // delete the field
                         $query = "ALTER TABLE `$table` DROP `" .
                            $current[$index] . '`';
-                        $result = mysql_query( $query, $db_link_list );
+                        $result = $db_link_list->prepare($query);
+                        $result->execute();
                         if( !$result ) {
                            log_error( __FILE__ . ':' . __LINE__,
-                              'Error executing query: <i>' . mysql_error() .
+                              'Error executing query: <i>' . $result->errorInfo()[2] .
                               '</i>; Query is: <code>' . $query . '</code>' );
                            die( STANDARD_ERROR );
                         }
@@ -1018,10 +1076,11 @@ function edit_owned( $id, $fields ) {
                         // add after the previous column
                         $query = "ALTER TABLE `$table` ADD COLUMN `$new` " .
                            "VARCHAR(255) DEFAULT NULL AFTER `$prev`";
-                        $result = mysql_query( $query, $db_link_list );
+                        $result = $db_link_list->prepare($query);
+                        $result->execute();
                         if( !$result ) {
                            log_error( __FILE__ . ':' . __LINE__,
-                              'Error executing query: <i>' . mysql_error() .
+                              'Error executing query: <i>' . $result->errorInfo()[2] .
                               '</i>; Query is: <code>' . $query . '</code>' );
                            die( STANDARD_ERROR );
                         }
@@ -1031,10 +1090,11 @@ function edit_owned( $id, $fields ) {
                         $query = "ALTER TABLE `$table` CHANGE `" .
                            $current[$index] . "` `$new` " .
                            "VARCHAR(255) DEFAULT NULL";
-                        $result = mysql_query( $query, $db_link_list );
+                        $result = $db_link_list->prepare($query);
+                        $result->execute();
                         if( !$result ) {
                            log_error( __FILE__ . ':' . __LINE__,
-                              'Error executing query: <i>' . mysql_error() .
+                              'Error executing query: <i>' . $result->errorInfo()[2] .
                               '</i>; Query is: <code>' . $query . '</code>' );
                            die( STANDARD_ERROR );
                         }
@@ -1044,16 +1104,18 @@ function edit_owned( $id, $fields ) {
 
                } // end foreach value as index -> new
 
-               mysql_close( $db_link_list );
+               $db_link_list = null;
 
                // update db_owned
                $additionaltext = str_replace( ',,', ',', $additionaltext );
                $query = "UPDATE `$db_owned` SET `additional` = " .
-                  "'$additionaltext' WHERE `listingid` = '$id'";
-               @mysql_query( $query, $db_link );
+                  "'$additionaltext' WHERE `listingid` = :id";
+               $result = $db_link->prepare($query);
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
@@ -1075,11 +1137,13 @@ function edit_owned( $id, $fields ) {
                $status = 1;
             else if( $value == 'current' )
                $status = 2;
-            $query .= "$status WHERE `listingid` = '$id'";
-            $result = mysql_query( $query );
+            $query .= "$status WHERE `listingid` = :id";
+            $result = $db_link->prepare($query);
+            $result->bindParam(':id', $id, PDO::PARAM_INT);
+            $result->execute();
             if( !$result ) {
                log_error( __FILE__ . ':' . __LINE__,
-                  'Error executing query: <i>' . mysql_error() .
+                  'Error executing query: <i>' . $result->errorInfo()[2] .
                   '</i>; Query is: <code>' . $query . '</code>' );
                die( STANDARD_ERROR );
             }
@@ -1094,11 +1158,13 @@ function edit_owned( $id, $fields ) {
                str_pad( $fields['date_day'], 2, '0', STR_PAD_LEFT );
             if( $new == $info['opened'] ) continue;
             $query = "UPDATE `$db_owned` SET `opened` = '$new' " .
-                "WHERE `listingid` = '$id'";
-            $result = mysql_query( $query );
+                "WHERE `listingid` = :id";
+            $result = $db_link->prepare($query);
+            $result->bindParam(':id', $id, PDO::PARAM_INT);
+            $result->execute();
             if( !$result ) {
                log_error( __FILE__ . ':' . __LINE__,
-                  'Error executing query: <i>' . mysql_error() .
+                  'Error executing query: <i>' . $result->errorInfo()[2] .
                   '</i>; Query is: <code>' . $query . '</code>' );
                die( STANDARD_ERROR );
             }
@@ -1111,25 +1177,29 @@ function edit_owned( $id, $fields ) {
                // get absolute path
                $query = "SELECT `value` FROM `$db_settings` WHERE " .
                   '`setting` = "owned_images_dir"';
-               $result = mysql_query( $query );
+               $result = $db_link->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
-               $row = mysql_fetch_array( $result );
+               $result->setFetchMode(PDO::FETCH_ASSOC);
+               $row = $result->fetch();
                $dir = $row['value'];
 
                $success = @unlink( $dir . $info['imagefile'] );
                if( $success ) {
                   $changes[] = 'Image deleted.';
                   $query = "UPDATE `$db_owned` SET `imagefile` = NULL WHERE " .
-                     "`listingid` = '$id'";
-                  $result = mysql_query( $query );
+                     "`listingid` = :id";
+                  $result = $db_link->prepare($query);
+                  $result->bindParam(':id', $id, PDO::PARAM_INT);
+                  $result->execute();
                   if( !$result ) {
                      log_error( __FILE__ . ':' . __LINE__,
-                        'Error executing query: <i>' . mysql_error() .
+                        'Error executing query: <i>' . $result->errorInfo()[2] .
                         '</i>; Query is: <code>' . $query . '</code>' );
                      die( STANDARD_ERROR );
                   }
@@ -1142,14 +1212,16 @@ function edit_owned( $id, $fields ) {
                // get absolute path
                $query = "SELECT `value` FROM `$db_settings` WHERE " .
                   '`setting` = "owned_images_dir"';
-               $result = mysql_query( $query );
+               $result = $db_link->prepare($query);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
-               $row = mysql_fetch_array( $result );
+               $result->setFetchMode(PDO::FETCH_ASSOC);
+               $row = $result->fetch();
                $dir = $row['value'];
 
                // delete the old image file
@@ -1168,12 +1240,15 @@ function edit_owned( $id, $fields ) {
 
                   // update db_owned
                   $file = $fields['imagefile'];
-                  $query = "UPDATE `$db_owned` SET `imagefile` = '$file' " .
-                     "WHERE `listingid` = '$id'";
-                  $result = mysql_query( $query );
+                  $query = "UPDATE `$db_owned` SET `imagefile` = :file " .
+                     "WHERE `listingid` = :id";
+                  $result = $db_link->prepare($query);
+                  $result->bindParam(':file', $file, PDO::PARAM_STR);
+                  $result->bindParam(':id', $id, PDO::PARAM_INT);
+                  $result->execute();
                   if( !$result ) {
                      log_error( __FILE__ . ':' . __LINE__,
-                        'Error executing query: <i>' . mysql_error() .
+                        'Error executing query: <i>' . $result->errorInfo()[2] .
                         '</i>; Query is: <code>' . $query . '</code>' );
                      die( STANDARD_ERROR );
                   }
@@ -1190,12 +1265,15 @@ function edit_owned( $id, $fields ) {
             // verify
             if( $value == $fields['dbpasswordv'] && $value != '' ) {
                // update db_owned
-               $query = "UPDATE `$db_owned` SET `dbpassword` = '$value' " .
-                  "WHERE `listingid` = '$id'";
-               $result = mysql_query( $query );
+               $query = "UPDATE `$db_owned` SET `dbpassword` = :value " .
+                  "WHERE `listingid` = :id";
+               $result = $db_link->prepare($query);
+               $result->bindParam(':value', $value, PDO::PARAM_STR);
+               $result->bindParam(':id', $id, PDO::PARAM_INT);
+               $result->execute();
                if( !$result ) {
                   log_error( __FILE__ . ':' . __LINE__,
-                     'Error executing query: <i>' . mysql_error() .
+                     'Error executing query: <i>' . $result->errorInfo()[2] .
                      '</i>; Query is: <code>' . $query . '</code>' );
                   die( STANDARD_ERROR );
                }
@@ -1218,11 +1296,13 @@ function edit_owned( $id, $fields ) {
                $set = 1;
             else
                continue;
-            $query .= "$set WHERE `listingid` = '$id'";
-            $result = mysql_query( $query );
+            $query .= "$set WHERE `listingid` = :id";
+            $result = $db_link->prepare($query);
+            $result->bindParam(':id', $id, PDO::PARAM_INT);
+            $result->execute();
             if( !$result ) {
                log_error( __FILE__ . ':' . __LINE__,
-                  'Error executing query: <i>' . mysql_error() .
+                  'Error executing query: <i>' . $result->errorInfo()[2] .
                   '</i>; Query is: <code>' . $query . '</code>' );
                die( STANDARD_ERROR );
             }
@@ -1243,12 +1323,15 @@ function edit_owned( $id, $fields ) {
             $cats = '|' . trim( $cats, '|' ) . '|';
             if( $cats == $info['catid'] )
                continue;
-            $query = "UPDATE `$db_owned` SET `catid` = '$cats' " .
-               "WHERE `listingid` = '$id'";
-            $result = mysql_query( $query );
+            $query = "UPDATE `$db_owned` SET `catid` = :cats " .
+               "WHERE `listingid` = :id";
+            $result = $db_link->prepare($query);
+            $result->bindParam(':cats', $cats, PDO::PARAM_INT);
+            $result->bindParam(':id', $id, PDO::PARAM_INT);
+            $result->execute();
             if( !$result ) {
                log_error( __FILE__ . ':' . __LINE__,
-                  'Error executing query: <i>' . mysql_error() .
+                  'Error executing query: <i>' . $result->errorInfo()[2] .
                   '</i>; Query is: <code>' . $query . '</code>' );
                die( STANDARD_ERROR );
             }
@@ -1282,14 +1365,16 @@ function edit_owned( $id, $fields ) {
             if( stripslashes( $value ) == $info[$field] )
                continue;
             $query = "UPDATE `$db_owned` SET `$field` = '$value' " .
-               "WHERE `listingid` = $id";
+               "WHERE `listingid` = :id";
             if( $value == 'null' )
                $query = "UPDATE `$db_owned` SET `$field` = null WHERE " .
-                  "`listingid` = '$id'";
-            $result = mysql_query( $query );
+                  "`listingid` = :id";
+            $result = $db_link->prepare($query);
+            $result->bindParam(':id', $id, PDO::PARAM_INT);
+            $result->execute();
             if( !$result ) {
                log_error( __FILE__ . ':' . __LINE__,
-                  'Error executing query: <i>' . mysql_error() .
+                  'Error executing query: <i>' . $result->errorInfo()[2] .
                   '</i>; Query is: <code>' . $query . '</code>' );
                die( STANDARD_ERROR );
             }
@@ -1354,21 +1439,26 @@ function edit_owned( $id, $fields ) {
 function delete_owned( $id ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    // get table info
-   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$id'";
-   $result = mysql_query( $query );
+   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :id";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $server = $row['dbserver'];
    $user = $row['dbuser'];
    $password = $row['dbpassword'];
@@ -1379,49 +1469,57 @@ function delete_owned( $id ) {
    //get $dir setting
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
       "'owned_images_dir'";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $dir = $row['value'];
 
    // delete from $db_owned
-   $query = "DELETE FROM `$db_owned` WHERE `listingid` = '$id'";
-   $result = mysql_query( $query );
+   $query = "DELETE FROM `$db_owned` WHERE `listingid` = :id";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    // connect to proper database
-   $db_link_list = mysql_connect( $server, $user, $password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link_list = new PDO('mysql:host=' . $server . ';dbname=' . $database . ';charset=utf8', $user, $password);
+      $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    // drop affiliates table
    $afftable = $table . '_affiliates';
    $query = "DROP TABLE IF EXISTS `$afftable`";
-   mysql_query( $query );
+   $result = $db_link_list->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    // drop actual table
    $query = "DROP TABLE `$table`";
-   mysql_query( $query );
+   $result = $db_link_list->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
@@ -1437,10 +1535,12 @@ function delete_owned( $id ) {
 /*___________________________________________________________________________*/
 function get_owned_cats( $status = 'all' ) {
    require 'config.php';
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT DISTINCT( `catid` ) as `id` FROM `$db_owned`";
    if( $status && $status != 'all' ) {
@@ -1452,19 +1552,21 @@ function get_owned_cats( $status = 'all' ) {
          $query .= " WHERE `status` = 2";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   if( mysql_num_rows( $result ) == 0 )
+   if( $result->rowCount() == 0 )
       return array(); // return empty array, no cats
 
    $query = "SELECT `catid` FROM `$db_category` WHERE ( ";
    $allcats = array();
-   while( $row = mysql_fetch_array( $result ) ) {
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() ) {
       $cats = explode( '|', $row['id'] );
       foreach( $cats as $cat )
          if( $cat != '' && !in_array( $cat, $allcats ) ) {
@@ -1474,16 +1576,18 @@ function get_owned_cats( $status = 'all' ) {
    }
    $query = rtrim( $query, 'OR ' ) . ' ) ';
    $query .= ' ORDER BY `catname` ASC';
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['catid'];
    return $ids;
 }
@@ -1493,34 +1597,41 @@ function get_owned_cats( $status = 'all' ) {
 function parse_owned_template( $id ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    // get date setting
    $query = "SELECT `value` FROM `$db_settings` WHERE " .
       "`setting` = 'date_format'";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $datesetting = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $datesetting = $result->fetch();
    $dateformat = $datesetting['value'];
 
    // get info
-   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$id'";
-   $result = mysql_query( $query );
+   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :id";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $info = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $info = $result->fetch();
 
    // find categories this is listed under (collective cats)
    $cats = '';
@@ -1544,17 +1655,19 @@ function parse_owned_template( $id ) {
    $query = "SELECT `setting`, `value` FROM `$db_settings` WHERE `setting` " .
       '= "owned_images_dir" OR `setting` = "root_path_absolute" OR ' .
       '`setting` = "root_path_web"';
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
    $dir = '';
    $root_web = '';
    $root_abs = '';
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       if( $row['setting'] == 'owned_images_dir' )
          $dir = $row['value'];
       else if( $row['setting'] == 'root_path_absolute' )
@@ -1570,14 +1683,16 @@ function parse_owned_template( $id ) {
 
    $query = "SELECT `value` FROM `$db_settings` WHERE `setting` = " .
       "'owned_template'";
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $setting = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $setting = $result->fetch();
 
    // get listing stats now
    $stats = get_listing_stats( $info['listingid'] );
@@ -1625,20 +1740,24 @@ function get_owned_by_category( $catid, $status = 'all' ) {
       $query .= " AND status = '$status'";
    $query .= ' ORDER BY `subject`';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   $result = mysql_query( $query );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['listingid'];
    return $ids;
 }
@@ -1648,10 +1767,12 @@ function get_owned_by_category( $catid, $status = 'all' ) {
 function search_owned( $search, $status = 'all', $start = 'none' ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    $query = "SELECT `listingid` FROM `$db_owned` WHERE ( MATCH( " .
       "`title`, `subject`, `url`, `desc` ) AGAINST( '$search' ) " .
@@ -1668,28 +1789,32 @@ function search_owned( $search, $status = 'all', $start = 'none' ) {
 
    if( $start != 'none' && ctype_digit( $start ) ) {
       $settingq = "SELECT value FROM $db_settings WHERE setting = 'per_page'";
-      $result = mysql_query( $settingq );
+      $result = $db_link->prepare($settingq);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $row = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $limit = $row['value'];
       $query .= " LIMIT $start, $limit";
    }
 
-   $result = mysql_query( $query );
+   $result = $db_link->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
 
    $ids = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $ids[] = $row['listingid'];
    return $ids;
 }
@@ -1699,29 +1824,35 @@ function search_owned( $search, $status = 'all', $start = 'none' ) {
 function get_listing_stats( $id, $extended = false ) {
    require 'config.php';
 
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
-   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = '$id'";
-   $result = mysql_query( $query );
+   $query = "SELECT * FROM `$db_owned` WHERE `listingid` = :id";
+   $result = $db_link->prepare($query);
+   $result->bindParam(':id', $id, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $info = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $info = $result->fetch();
 
-   $db_link_list = mysql_connect( $info['dbserver'], $info['dbuser'],
-      $info['dbpassword'] );
-   if( $db_link_list === false ) {
+   try {
+      $db_link_list = new PDO('mysql:host=' . $info['dbserver'] . ';charset=utf8', $info['dbuser'], $info['dbpassword']);
+      $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
       echo '<p class="error">' . DATABASE_CONNECT_ERROR .
          " Can't connect to MySQL server on {$info['dbserver']}</p>";
       return;
    }
-   $dbselected = mysql_select_db( $info['dbdatabase'], $db_link_list );
+   $dbselected = $db_link_list->query('USE ' . $info['dbdatabase']);
    if( !$dbselected ) {
       echo '<p class="error">' . DATABASE_CONNECT_ERROR .
          " Can't connect to MySQL database '{$info['dbdatabase']}'</p>";
@@ -1735,42 +1866,48 @@ function get_listing_stats( $id, $extended = false ) {
    // get added date in main table - make sure it is only approved members
    $query = "SELECT `added` FROM `$table` WHERE `pending` = 0 " .
       'ORDER BY `added` DESC LIMIT 1';
-   $result = mysql_query( $query );
+   $result = $db_link_list->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $stats['lastupdated'] = $row['added'];
 
    // get most recent members
    $query = "SELECT * FROM `$table` WHERE `added` = '" .
       $stats['lastupdated'] . '\'';
-   $result = mysql_query( $query );
+   $result = $db_link_list->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
    $new = array();
-   while( $row = mysql_fetch_array( $result ) )
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   while( $row = $result->fetch() )
       $new[] = $row;
 
    // get added date in affiliates table if affiliates is present
    if( $info['affiliates'] == 1 ) {
       $query = "SELECT `added` FROM `$afftable` ORDER BY `added` " .
          'DESC LIMIT 1';
-      $result = mysql_query( $query );
+      $result = $db_link_list->prepare($query);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $row = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
 
       if( $row['added'] && $row['added'] > $stats['lastupdated'] )
          $stats['lastupdated'] = $row['added'];
@@ -1779,15 +1916,17 @@ function get_listing_stats( $id, $extended = false ) {
          // now we take the newest affiliates added
          $query = "SELECT * FROM `$afftable` WHERE `added` = '" .
             $row['added'] . "'";
-         $result = mysql_query( $query );
+         $result = $db_link_list->prepare($query);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             die( STANDARD_ERROR );
          }
          $affrows = array();
-         while( $affrow = mysql_fetch_array( $result ) )
+         $result->setFetchMode(PDO::FETCH_ASSOC);
+         while( $affrow = $result->fetch() )
             $affrows[] = $affrow;
 
          // prep new affiliates
@@ -1811,14 +1950,15 @@ function get_listing_stats( $id, $extended = false ) {
          $stats['newaffiliatesimg'] = $newaffiliates_img;
    
          // sigh, reconnect :p
-         $db_link_list = mysql_connect( $info['dbserver'], $info['dbuser'],
-            $info['dbpassword'] );
-         if( $db_link_list === false ) {
+         try {
+            $db_link_list = new PDO('mysql:host=' . $info['dbserver'] . ';charset=utf8', $info['dbuser'], $info['dbpassword']);
+            $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+         } catch (PDOException $e) {
             echo '<p class="error">' . DATABASE_CONNECT_ERROR .
                " Can't connect to MySQL server on {$info['dbserver']}</p>";
             return;
          }
-         $dbselected = mysql_select_db( $info['dbdatabase'] );
+         $dbselected = $db_link_list->query('USE ' . $info['dbdatabase']);
          if( !$dbselected ) {
             echo '<p class="error">' . DATABASE_CONNECT_ERROR .
                " Can't connect to MySQL database '{$info['dbdatabase']}'</p>";
@@ -1827,44 +1967,51 @@ function get_listing_stats( $id, $extended = false ) {
 
          // get total affiliates
          $query = "SELECT COUNT(*) AS `count` FROM `$afftable`";
-         $result = mysql_query( $query );
+         $result = $db_link_list->prepare($query);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             die( STANDARD_ERROR );
          }
-         $affnum = mysql_fetch_array( $result );
+         $result->setFetchMode(PDO::FETCH_ASSOC);
+         $affnum = $result->fetch();
          $stats['totalaffiliates'] = $affnum['count'];
 
          // random affiliate
          $rand = rand( 1, $stats['totalaffiliates'] ) - 1;
-         $query = "SELECT * FROM `$afftable` LIMIT $rand, 1";
-         $result = mysql_query( $query );
+         if ($rand < 1) $rand++; // Fix for 0 or negative output
+         $query = "SELECT * FROM `$afftable` LIMIT :rand, 1";
+         $result = $db_link_list->prepare($query);
+         $result->bindParam(':rand', $rand, PDO::PARAM_INT);
+         $result->execute();
          if( !$result ) {
             log_error( __FILE__ . ':' . __LINE__,
-               'Error executing query: <i>' . mysql_error() .
+               'Error executing query: <i>' . $result->errorInfo()[2] .
                '</i>; Query is: <code>' . $query . '</code>' );
             die( STANDARD_ERROR );
          }
-         $randaff = mysql_fetch_array( $result );
+         $result->setFetchMode(PDO::FETCH_ASSOC);
+         $randaff = $result->fetch();
          $stats['randomaffiliate'] = '<a href="' . $randaff['url'];
          if( $info['linktarget'] ) {
             $stats['randomaffiliate'] .= '" target="' . $info['linktarget'];
          }
-         $stats['randomaffiliates'] .= '">' . $randaff['title'] . '</a> ';
+         $stats['randomaffiliate'] .= '">' . $randaff['title'] . '</a> ';
          $stats['randomaffiliateimg'] = parse_affiliates_template(
             $randaff['affiliateid'], $info['listingid'] );
 
          // sigh, reconnect :p
-         $db_link_list = mysql_connect( $info['dbserver'], $info['dbuser'],
-            $info['dbpassword'] );
-         if( $db_link_list === false ) {
+         try {
+            $db_link_list = new PDO('mysql:host=' . $info['dbserver'] . ';charset=utf8', $info['dbuser'], $info['dbpassword']);
+            $db_link_list->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+         } catch (PDOException $e) {
             echo '<p class="error">' . DATABASE_CONNECT_ERROR .
                " Can't connect to MySQL server on {$info['dbserver']}</p>";
             return;
          }
-         $dbselected = mysql_select_db( $info['dbdatabase'] );
+         $dbselected = $db_link_list->query('USE ' . $info['dbdatabase']);
          if( !$dbselected ) {
             echo '<p class="error">' . DATABASE_CONNECT_ERROR .
                " Can't connect to MySQL database '{$info['dbdatabase']}'</p>";
@@ -1894,27 +2041,33 @@ function get_listing_stats( $id, $extended = false ) {
 
    // get total number of members
    $query = "SELECT COUNT(*) AS `count` FROM `$table` WHERE `pending` = 0";
-   $result = mysql_query( $query );
+   $result = $db_link_list->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $stats['total'] = $row['count'];
    
    // random member
    $rand = rand( 1, $stats['total'] ) - 1;
-   $query = "SELECT * FROM `$table` WHERE `pending` = 0 LIMIT $rand, 1";
-   $result = mysql_query( $query );
+   if ($rand < 1) $rand++; // Fix for 0 or negative output
+   $query = "SELECT * FROM `$table` WHERE `pending` = 0 LIMIT :rand, 1";
+   $result = $db_link_list->prepare($query);
+   $result->bindParam(':rand', $rand, PDO::PARAM_INT);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $randmem = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $randmem = $result->fetch();
    $stats['randommember'] = $randmem['name'];
    if( $randmem['url'] && $randmem['showurl'] == 1 ) {
       $stats['randommember'] = '<a href="' . $randmem['url'];
@@ -1939,14 +2092,16 @@ function get_listing_stats( $id, $extended = false ) {
 
    // get total number of PENDING members
    $query = "SELECT COUNT(*) AS `count` FROM `$table` WHERE `pending` = 1";
-   $result = mysql_query( $query );
+   $result = $db_link_list->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $stats['pending'] = $row['count'];
 
    // prepare average number of new fans a day
@@ -1954,14 +2109,16 @@ function get_listing_stats( $id, $extended = false ) {
       "`month`, DAYOFMONTH( `added` ) AS `day` FROM `$table` WHERE " .
       "`pending` = 0 AND `added` != '0000-00-00' ORDER BY `added` ASC " .
       'LIMIT 1';
-   $result = mysql_query( $query );
+   $result = $db_link_list->prepare($query);
+   $result->execute();
    if( !$result ) {
       log_error( __FILE__ . ':' . __LINE__,
-         'Error executing query: <i>' . mysql_error() .
+         'Error executing query: <i>' . $result->errorInfo()[2] .
          '</i>; Query is: <code>' . $query . '</code>' );
       die( STANDARD_ERROR );
    }
-   $row = mysql_fetch_array( $result );
+   $result->setFetchMode(PDO::FETCH_ASSOC);
+   $row = $result->fetch();
    $firstyear = $row['year'];
    $firstmonth = $row['month'];
    $firstday = $row['day'];
@@ -1977,18 +2134,20 @@ function get_listing_stats( $id, $extended = false ) {
    if( $info['country'] == 1 ){
       $query = 'SELECT COUNT( DISTINCT( `country` ) ) AS `countries` FROM ' .
          "`$table` WHERE `pending` = 0";
-      $result = mysql_query( $query );
+      $result = $db_link_list->prepare($query);
+      $result->execute();
       if( !$result ) {
          log_error( __FILE__ . ':' . __LINE__,
-            'Error executing query: <i>' . mysql_error() .
+            'Error executing query: <i>' . $result->errorInfo()[2] .
             '</i>; Query is: <code>' . $query . '</code>' );
          die( STANDARD_ERROR );
       }
-      $row = mysql_fetch_array( $result );
+      $result->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $result->fetch();
       $stats['countries'] = $row['countries'];
    } else $stats['countries'] = '0';
 
-   @mysql_close( $db_link_list );
+   $db_link_list = null;
    return $stats;
 }
 ?>

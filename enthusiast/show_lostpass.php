@@ -90,9 +90,9 @@ if( isset( $_POST['enth_email'] ) && $_POST['enth_email'] != '' ) {
    }
 
    $email = '';
-   $matchstring = "^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+" .
-      "@([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}$";
-   if( !ereg( $matchstring, clean( $_POST['enth_email'] ) ) ||
+   $matchstring = "/^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+" .
+      "@([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}$/";
+   if( !preg_match( $matchstring, clean( $_POST['enth_email'] ) ) ||
       !ctype_graph( clean( $_POST['enth_email'] ) ) )  {
 ?>
       <p style="font-weight: bold;" class="show_lostpass_bad_email">That

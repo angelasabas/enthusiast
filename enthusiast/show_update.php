@@ -122,8 +122,8 @@ if( isset( $_POST['enth_update'] ) && $_POST['enth_update'] == 'yes' ) {
    }
 
    // email matching
-   $matchstring = "^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+" .
-      "@([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}$";
+   $matchstring = "/^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+" .
+      "@([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}$/";
 
    // check password
    if( !( check_member_password( $listing, clean( $_POST['enth_email'] ),
@@ -133,7 +133,7 @@ if( isset( $_POST['enth_update'] ) && $_POST['enth_update'] == 'yes' ) {
          'password, <a href="' . $info['lostpasspage'] .
          '">click here</a>.';
    // check email
-   else if( !ereg( $matchstring, $_POST['enth_email'] ) )
+   else if( !preg_match( $matchstring, $_POST['enth_email'] ) )
       $messages['form'] = 'The email you supplied is not valid. Please ' .
          'try again.';
    else {

@@ -1,12 +1,12 @@
 <?php
 /**
- * Null implementation of the PEAR Mail interface
+ * Mock implementation
  *
  * PHP version 5
  *
  * LICENSE:
  *
- * Copyright (c) 2010-2017, Phil Kernick
+ * Copyright (c) 2010-2017, Chuck Hagenbuch
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,23 +38,67 @@
  *
  * @category    Mail
  * @package     Mail
- * @author      Phil Kernick <philk@rotfl.com.au>
- * @copyright   2010-2017 Phil Kernick
+ * @author      Chuck Hagenbuch <chuck@horde.org> 
+ * @copyright   2010-2017 Chuck Hagenbuch
  * @license     http://opensource.org/licenses/BSD-3-Clause New BSD License
  * @version     CVS: $Id$
  * @link        http://pear.php.net/package/Mail/
  */
 
 /**
- * Null implementation of the PEAR Mail:: interface.
+ * Mock implementation of the PEAR Mail:: interface for testing.
  * @access public
  * @package Mail
  * @version $Revision$
  */
-class Mail_null extends Mail {
+class Mail_mock extends Mail {
 
     /**
-     * Implements Mail_null::send() function. Silently discards all
+     * Array of messages that have been sent with the mock.
+     *
+     * @var array
+     */
+    public $sentMessages = array();
+
+    /**
+     * Callback before sending mail.
+     *
+     * @var callback
+     */
+    protected $_preSendCallback;
+
+    /**
+     * Callback after sending mai.
+     *
+     * @var callback
+     */
+    protected $_postSendCallback;
+
+    /**
+     * Constructor.
+     *
+     * Instantiates a new Mail_mock:: object based on the parameters
+     * passed in. It looks for the following parameters, both optional:
+     *     preSendCallback   Called before an email would be sent.
+     *     postSendCallback  Called after an email would have been sent.
+     *
+     * @param array Hash containing any parameters.
+     */
+    public function __construct($params)
+    {
+        if (isset($params['preSendCallback']) &&
+            is_callable($params['preSendCallback'])) {
+            $this->_preSendCallback = $params['preSendCallback'];
+        }
+
+        if (isset($params['postSendCallback']) &&
+            is_callable($params['postSendCallback'])) {
+            $this->_postSendCallback = $params['postSendCallback'];
+        }
+    }
+
+    /**
+     * Implements Mail_mock::send() function. Silently discards all
      * mail.
      *
      * @param mixed $recipients Either a comma-seperated list of recipients
@@ -79,6 +123,19 @@ class Mail_null extends Mail {
      */
     public function send($recipients, $headers, $body)
     {
+        if ($this->_preSendCallback) {
+            call_user_func_array($this->_preSendCallback,
+                                 array(&$this, $recipients, $headers, $body));
+        }
+
+        $entry = array('recipients' => $recipients, 'headers' => $headers, 'body' => $body);
+        $this->sentMessages[] = $entry;
+
+        if ($this->_postSendCallback) {
+            call_user_func_array($this->_postSendCallback,
+                                 array(&$this, $recipients, $headers, $body));
+        }
+
         return true;
     }
 

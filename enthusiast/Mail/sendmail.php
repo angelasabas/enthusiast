@@ -1,44 +1,74 @@
 <?php
-//
-// +----------------------------------------------------------------------+
-// | PHP Version 4                                                        |
-// +----------------------------------------------------------------------+
-// | Copyright (c) 1997-2003 The PHP Group                                |
-// +----------------------------------------------------------------------+
-// | This source file is subject to version 2.02 of the PHP license,      |
-// | that is bundled with this package in the file LICENSE, and is        |
-// | available at through the world-wide-web at                           |
-// | http://www.php.net/license/2_02.txt.                                 |
-// | If you did not receive a copy of the PHP license and are unable to   |
-// | obtain it through the world-wide-web, please send a note to          |
-// | license@php.net so we can mail you a copy immediately.               |
-// +----------------------------------------------------------------------+
-// | Author: Chuck Hagenbuch <chuck@horde.org>                            |
-// +----------------------------------------------------------------------+
+/**
+ * Sendmail implementation of the PEAR Mail interface.
+ *
+ * PHP version 5
+ *
+ * LICENSE:
+ *
+ * Copyright (c) 2010-2017, Chuck Hagenbuch & Jon Parise
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @category    Mail
+ * @package     Mail
+ * @author      Jon Parise <jon@php.net>
+ * @author      Chuck Hagenbuch <chuck@horde.org>
+ * @copyright   2010-2017 Chuck Hagenbuch
+ * @license     http://opensource.org/licenses/BSD-3-Clause New BSD License
+ * @version     CVS: $Id$
+ * @link        http://pear.php.net/package/Mail/
+ */
 
 /**
  * Sendmail implementation of the PEAR Mail:: interface.
  * @access public
  * @package Mail
- * @version $Revision: 1.17 $
+ * @version $Revision$
  */
 class Mail_sendmail extends Mail {
 
-	/**
+    /**
      * The location of the sendmail or sendmail wrapper binary on the
      * filesystem.
      * @var string
      */
     var $sendmail_path = '/usr/sbin/sendmail';
 
-	/**
+    /**
      * Any extra command-line parameters to pass to the sendmail or
      * sendmail wrapper binary.
      * @var string
      */
     var $sendmail_args = '-i';
 
-	/**
+    /**
      * Constructor.
      *
      * Instantiates a new Mail_sendmail:: object based on the parameters
@@ -54,9 +84,8 @@ class Mail_sendmail extends Mail {
      *
      * @param array $params Hash containing any parameters different from the
      *              defaults.
-     * @access public
      */
-    function Mail_sendmail($params)
+    public function __construct($params)
     {
         if (isset($params['sendmail_path'])) {
             $this->sendmail_path = $params['sendmail_path'];
@@ -77,7 +106,7 @@ class Mail_sendmail extends Mail {
         }
     }
 
-	/**
+    /**
      * Implements Mail::send() function using the sendmail
      * command-line binary.
      *
@@ -100,22 +129,36 @@ class Mail_sendmail extends Mail {
      * @return mixed Returns true on success, or a PEAR_Error
      *               containing a descriptive error message on
      *               failure.
-     * @access public
      */
-    function send($recipients, $headers, $body)
+    public function send($recipients, $headers, $body)
     {
+        if (!is_array($headers)) {
+            return PEAR::raiseError('$headers must be an array');
+        }
+
+        $result = $this->_sanitizeHeaders($headers);
+        if (is_a($result, 'PEAR_Error')) {
+            return $result;
+        }
+
         $recipients = $this->parseRecipients($recipients);
-        if (PEAR::isError($recipients)) {
+        if (is_a($recipients, 'PEAR_Error')) {
             return $recipients;
         }
-        $recipients = escapeShellCmd(implode(' ', $recipients));
+        $recipients = implode(' ', array_map('escapeshellarg', $recipients));
 
-        $this->_sanitizeHeaders($headers);
         $headerElements = $this->prepareHeaders($headers);
-        if (PEAR::isError($headerElements)) {
+        if (is_a($headerElements, 'PEAR_Error')) {
             return $headerElements;
         }
         list($from, $text_headers) = $headerElements;
+
+        /* Since few MTAs are going to allow this header to be forged
+         * unless it's in the MAIL FROM: exchange, we'll use
+         * Return-Path instead of From: if it's set. */
+        if (!empty($headers['Return-Path'])) {
+            $from = $headers['Return-Path'];
+        }
 
         if (!isset($from)) {
             return PEAR::raiseError('No from address given.');
@@ -126,7 +169,8 @@ class Mail_sendmail extends Mail {
             return PEAR::raiseError('From address specified with dangerous characters.');
         }
 
-        $from = escapeShellCmd($from);
+        $from = escapeshellarg($from); // Security bug #16200
+
         $mail = @popen($this->sendmail_path . (!empty($this->sendmail_args) ? ' ' . $this->sendmail_args : '') . " -f$from -- $recipients", 'w');
         if (!$mail) {
             return PEAR::raiseError('Failed to open sendmail [' . $this->sendmail_path . '] for execution.');

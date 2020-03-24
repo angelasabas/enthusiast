@@ -31,10 +31,12 @@ require_once( 'config.php' );
 if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
 
    // try to connect
-   $db_link = mysql_connect( $db_server, $db_user, $db_password )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
-   mysql_select_db( $db_database )
-      or die( DATABASE_CONNECT_ERROR . mysql_error() );
+   try {
+      $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+      $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   } catch (PDOException $e) {
+      die( DATABASE_CONNECT_ERROR . $e->getMessage() );
+   }
 
    // create cats array
    $cats = array();
@@ -118,8 +120,11 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
    $installed = 0;
    foreach( $cats as $cat ) {
       // create query
-      $query = "INSERT INTO `$db_category` VALUES (null, '$cat', '0')";
-      $result = mysql_query( $query );
+      $query = "INSERT INTO `$db_category` VALUES (null, :cat, '0')";
+
+      $result = $db_link->prepare($query);
+      $result->bindParam(':cat', $cat, PDO::PARAM_STR);
+      $result->execute();
       if( $result )
          $installed++;
    }

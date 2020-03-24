@@ -1,22 +1,49 @@
 <?php
-//
-// +----------------------------------------------------------------------+
-// | PHP Version 4                                                        |
-// +----------------------------------------------------------------------+
-// | Copyright (c) 1997-2003 The PHP Group                                |
-// +----------------------------------------------------------------------+
-// | This source file is subject to version 2.02 of the PHP license,      |
-// | that is bundled with this package in the file LICENSE, and is        |
-// | available at through the world-wide-web at                           |
-// | http://www.php.net/license/2_02.txt.                                 |
-// | If you did not receive a copy of the PHP license and are unable to   |
-// | obtain it through the world-wide-web, please send a note to          |
-// | license@php.net so we can mail you a copy immediately.               |
-// +----------------------------------------------------------------------+
-// | Author: Chuck Hagenbuch <chuck@horde.org>                            |
-// +----------------------------------------------------------------------+
-//
-// $Id: Mail.php,v 1.17 2006/09/15 03:41:18 jon Exp $
+/**
+ * PEAR's Mail:: interface.
+ *
+ * PHP version 5
+ *
+ * LICENSE:
+ *
+ * Copyright (c) 1997-2017, Chuck Hagenbuch & Richard Heyes
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @category    Mail
+ * @package     Mail
+ * @author      Chuck Hagenbuch <chuck@horde.org>
+ * @copyright   1997-2017 Chuck Hagenbuch
+ * @license     http://opensource.org/licenses/BSD-3-Clause New BSD License
+ * @version     CVS: $Id$
+ * @link        http://pear.php.net/package/Mail/
+ */
 
 require_once 'PEAR.php';
 
@@ -25,8 +52,7 @@ require_once 'PEAR.php';
  * mailers under the PEAR hierarchy, and provides supporting functions
  * useful in multiple mailer backends.
  *
- * @access public
- * @version $Revision: 1.17 $
+ * @version $Revision$
  * @package Mail
  */
 class Mail
@@ -35,7 +61,7 @@ class Mail
      * Line terminator used for separating header lines.
      * @var string
      */
-    var $sep = "\r\n";
+    public $sep = "\r\n";
 
     /**
      * Provides an interface for generating Mail:: objects of various
@@ -43,10 +69,10 @@ class Mail
      *
      * @param string $driver The kind of Mail:: object to instantiate.
      * @param array  $params The parameters to pass to the Mail:: object.
+     *
      * @return object Mail a instance of the driver class or if fails a PEAR Error
-     * @access public
      */
-    function &factory($driver, $params = array())
+    public static function factory($driver, $params = array())
     {
         $driver = strtolower($driver);
         @include_once 'Mail/' . $driver . '.php';
@@ -82,12 +108,19 @@ class Mail
      * @return mixed Returns true on success, or a PEAR_Error
      *               containing a descriptive error message on
      *               failure.
-     * @access public
+     *
      * @deprecated use Mail_mail::send instead
      */
-    function send($recipients, $headers, $body)
+    public function send($recipients, $headers, $body)
     {
-        $this->_sanitizeHeaders($headers);
+        if (!is_array($headers)) {
+            return PEAR::raiseError('$headers must be an array');
+        }
+
+        $result = $this->_sanitizeHeaders($headers);
+        if (is_a($result, 'PEAR_Error')) {
+            return $result;
+        }
 
         // if we're passed an array of recipients, implode it.
         if (is_array($recipients)) {
@@ -103,10 +136,9 @@ class Mail
         }
 
         // flatten the headers out.
-        list(,$text_headers) = Mail::prepareHeaders($headers);
+        list(, $text_headers) = Mail::prepareHeaders($headers);
 
         return mail($recipients, $subject, $body, $text_headers);
-
     }
 
     /**
@@ -115,10 +147,8 @@ class Mail
      * filter is to prevent mail injection attacks.
      *
      * @param array $headers The associative array of headers to sanitize.
-     *
-     * @access private
      */
-    function _sanitizeHeaders(&$headers)
+    protected function _sanitizeHeaders(&$headers)
     {
         foreach ($headers as $key => $value) {
             $headers[$key] =
@@ -141,9 +171,8 @@ class Mail
      *               otherwise returns an array containing two
      *               elements: Any From: address found in the headers,
      *               and the plain text version of the headers.
-     * @access private
      */
-    function prepareHeaders($headers)
+    protected function prepareHeaders($headers)
     {
         $lines = array();
         $from = null;
@@ -151,9 +180,9 @@ class Mail
         foreach ($headers as $key => $value) {
             if (strcasecmp($key, 'From') === 0) {
                 include_once 'Mail/RFC822.php';
-                $parser = &new Mail_RFC822();
+                $parser = new Mail_RFC822();
                 $addresses = $parser->parseAddressList($value, 'localhost', false);
-                if (PEAR::isError($addresses)) {
+                if (is_a($addresses, 'PEAR_Error')) {
                     return $addresses;
                 }
 
@@ -203,9 +232,8 @@ class Mail
      *
      * @return mixed An array of forward paths (bare addresses) or a PEAR_Error
      *               object if the address list could not be parsed.
-     * @access private
      */
-    function parseRecipients($recipients)
+    protected function parseRecipients($recipients)
     {
         include_once 'Mail/RFC822.php';
 
@@ -218,10 +246,11 @@ class Mail
         // Parse recipients, leaving out all personal info. This is
         // for smtp recipients, etc. All relevant personal information
         // should already be in the headers.
-        $addresses = Mail_RFC822::parseAddressList($recipients, 'localhost', false);
+        $Mail_RFC822 = new Mail_RFC822();
+        $addresses = $Mail_RFC822->parseAddressList($recipients, 'localhost', false);
 
         // If parseAddressList() returned a PEAR_Error object, just return it.
-        if (PEAR::isError($addresses)) {
+        if (is_a($addresses, 'PEAR_Error')) {
             return $addresses;
         }
 

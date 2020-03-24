@@ -126,12 +126,12 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
 
    if( count( $errors ) == 0 ) { // continue now
       // try to connect
-      $db_link = mysql_connect( $db_server, $db_user, $db_password )
-         or die( '<p class="error">Cannot connect to the database. ' .
-            'Try again.</p>' );
-      mysql_select_db( $db_database )
-         or die( '<p class="error">Cannot connect to the database. ' .
-            'Try again.</p>' );
+      try {
+         $db_link = new PDO('mysql:host=' . $db_server . ';dbname=' . $db_database . ';charset=utf8', $db_user, $db_password);
+         $db_link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      } catch (PDOException $e) {
+         echo $e->getMessage();
+      }
 
       // create collective affiliates table
       $query = "CREATE TABLE `$db_affiliates` (" .
@@ -142,11 +142,15 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          '`email` varchar(255) NOT NULL default \'\',' .
          '`added` date default NULL,' .
          'PRIMARY KEY  (`affiliateid`)' .
-         ') TYPE=MyISAM AUTO_INCREMENT=1';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+         ') ENGINE=MyISAM AUTO_INCREMENT=1';
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       // create categories table
@@ -155,11 +159,15 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          '`catname` varchar(255) NOT NULL default \'\', ' .
          '`parent` int(5) NOT NULL DEFAULT \'0\', ' .
          'PRIMARY KEY  (`catid`)' .
-         ') TYPE=MyISAM AUTO_INCREMENT=1';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+         ') ENGINE=MyISAM AUTO_INCREMENT=1';
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       // create email templates table
@@ -170,11 +178,15 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          '`content` text NOT NULL,' .
          '`deletable` tinyint(1) NOT NULL default \'1\',' .
          'PRIMARY KEY  (`templateid`)' .
-         ') TYPE=MyISAM AUTO_INCREMENT=2';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+         ') ENGINE=MyISAM AUTO_INCREMENT=2';
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_emailtemplate` VALUES (1, 'Add Affiliate " .
          'Template\', \'Affiliation with $$site_title$$\', ' .
@@ -183,10 +195,14 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          'as an affiliate at $$site_title$$, ' .
          'found at $$site_url$$. :)\r\n\r\nSincerely,\r\n$$' .
          'site_owner$$\', 0 )';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       // create joined table
@@ -202,11 +218,15 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          '`pending` tinyint(1) NOT NULL default \'0\',' .
          'PRIMARY KEY  (`joinedid`),' .
          'FULLTEXT KEY `subject` (`subject`,`desc`,`comments`)' .
-         ') TYPE=MyISAM AUTO_INCREMENT=1';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+         ') ENGINE=MyISAM AUTO_INCREMENT=1';
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       // create owned table
@@ -250,11 +270,15 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          '`status` tinyint(1) NOT NULL default \'0\',' .
          'PRIMARY KEY  (`listingid`),' .
          'FULLTEXT KEY `title` (`title`,`subject`,`url`,`desc`)' .
-         ') TYPE=MyISAM AUTO_INCREMENT=1';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+         ') ENGINE=MyISAM AUTO_INCREMENT=1';
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       // create error logs table
@@ -262,10 +286,14 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          '`date` DATETIME NOT NULL ,' .
          '`source` VARCHAR( 100 ) NOT NULL ,' .
          '`log` TEXT NOT NULL )';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       // create settings table
@@ -275,11 +303,15 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          '`value` text NOT NULL,' .
          '`help` text NOT NULL,' .
          'PRIMARY KEY  (`setting`)' .
-         ') TYPE=MyISAM';
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+         ') ENGINE=MyISAM';
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       // populate settings table, templates first
@@ -288,54 +320,78 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          "src=\"enth3-image\" width=\"enth3-width\" height=\"enth3-height\" " .
          "border=\"0\" alt=\" enth3-title\" /></a> ', 'Template for showing " .
          "collective affiliates.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ( " .
          "'affiliates_template_footer', 'Affiliates template footer', '</p>', " .
          "'Text that is inserted directly after the collective affiliates are " .
          "shown.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ( " .
          "'affiliates_template_header', 'Affiliates template header', " .
          "'<p class=\"center\">', 'Text inserted directly before collective " .
          "affiliates are shown.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ('joined_template', " .
          "'Joined fanlistings template', '<a href=\"enth3-url\"><img " .
          "src=\"enth3-image\" width=\"enth3-width\" height=\"enth3-height\" " .
          "border=\"0\" alt=\" enth3-subject: enth3-desc\" /></a> ', " .
          "'Template for showing joined fanlistings.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ('joined_template_footer', " .
          "'Joined template footer', '</p>', 'Text that is inserted directly " .
          "after the joined listings are shown.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ('joined_template_header', " .
          "'Joined template header', '<p class=\"center\">', " .
          "'Text inserted directly before joined listings are shown.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ('owned_template', " .
          "'Owned fanlistings template', '<p class=\"center\"><a " .
@@ -344,25 +400,37 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
          "/></a><br />\r\n<b>enth3-title: enth3-subject</b><br />\r\n<b><a " .
          "href=\"enth3-url\">enth3-url</a></b><br />\r\nenth3-desc</p>', " .
          "'Template for showing owned fanlistings.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ('owned_template_footer', " .
          "'Owned template footer', '</p>', 'owned listings are shown.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
       $query = "INSERT INTO `$db_settings` VALUES ('owned_template_header', " .
          "'Owned template header', '<p class=\"center\">', 'Text inserted " .
          "directly before owned listings are shown.')";
-      $success = mysql_query( $query ) or die( '<p class="error">Error ' .
-         'executing query: ' . mysql_error() . '; <i>' . $query . '</i></p>' );
+      try {
+         $success = $db_link->prepare($query);
+         $success->execute();
+      } catch (PDOException $e) {
+         die('<p class="error">Error executing query: ' . $e->getMessage() . '; <i>' . $query . '</i></p>');
+      }
       if( !$success )
-         echo '<p class="error">Query unsuccessful: ' . mysql_error() . ' ' .
+         echo '<p class="error">Query unsuccessful: ' . $success->errorInfo()[2] . ' ' .
             $query . '</p>';
 
       foreach( $_POST as $field => $value ) {
@@ -477,19 +545,29 @@ if( isset( $_POST['install'] ) && $_POST['install'] == 'yes' ) {
                   break;
             }
 
-            $query = "INSERT INTO `$db_settings` VALUES ('$field', " .
-               "'$title', '$value', '$help')";
+            $query = "INSERT INTO `$db_settings` VALUES (:field, " .
+               ":title, :value, :help)";
             if( $field == 'password' ) {
-               $query = "INSERT INTO `$db_settings` VALUES ('$field', " .
-                  "'$title', MD5( '$value' ), '$help')";
+               $query = "INSERT INTO `$db_settings` VALUES (:field, " .
+                  ":title, MD5( :value ), :help)";
                }
             if( $field != 'passwordv' ) {
-               $success = mysql_query( $query ) or die( '<p class="error">' .
-                  'Error executing query: ' . mysql_error() . '; <i>' . $query .
-                  '</i></p>' );
+               try {
+                  $success = $db_link->prepare($query);
+                  $success->bindParam(':field', $field, PDO::PARAM_STR);
+                  $success->bindParam(':title', $title, PDO::PARAM_STR);
+                  $success->bindParam(':value', $value, PDO::PARAM_STR);
+                  $success->bindParam(':help', $help, PDO::PARAM_STR);
+                  $success->execute();
+               } catch (PDOException $e) {
+                  die('<p class="error">' .
+                  'Error executing query: ' . $e->getMessage() . '; <i>' . $query .
+                  '</i></p>');
+               }
+
                if( !$success )
                   echo '<p class="error">Query unsuccessful: ' .
-                     mysql_error() . ' ' . $query . '</p>';
+                     $success->errorInfo()[2] . ' ' . $query . '</p>';
             }
          }
       }
